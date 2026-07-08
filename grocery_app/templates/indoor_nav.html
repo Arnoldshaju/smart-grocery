@@ -1,0 +1,1646 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Indoor Navigation — Smart Grocery{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+  href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
+  rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #f9f7f4;
+    --ink: #1a1814;
+    --ink-faint: #6b6762;
+    --ink-lighter: #9c9894;
+    --rule: #e2deda;
+    --card: #ffffff;
+    --green: #2c5f2e;
+    --green-light: #e8f5e9;
+    --green-mid: #4caf50;
+    --map-bg: #f0ede6;
+    --route-color: #43a047;
+    --pin-color: #e53935;
+    --entrance: #1565c0;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .nav-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  /* ── Topbar ── */
+  .nav-topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--rule);
+    padding: .65rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-shrink: 0;
+    z-index: 50;
+  }
+
+  .nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+    text-decoration: none;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: .28rem .65rem;
+    transition: color .12s, border-color .12s;
+  }
+
+  .nav-back:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .nav-title {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .nav-stats {
+    margin-left: auto;
+    font-size: .7rem;
+    color: var(--ink-lighter);
+    display: flex;
+    gap: .85rem;
+    flex-shrink: 0;
+  }
+
+  .nav-stat strong {
+    color: var(--ink-faint);
+    display: block;
+    font-family: 'EB Garamond', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  /* ── Search ── */
+  .search-panel {
+    background: var(--card);
+    border-bottom: 1px solid var(--rule);
+    padding: .6rem 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .search-inner {
+    position: relative;
+    max-width: 520px;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .search-inner input {
+    flex: 1;
+    padding: .5rem 2.2rem .5rem .85rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    background: var(--cream);
+    transition: border-color .15s, background .15s;
+  }
+
+  .search-inner input:focus {
+    border-color: var(--green);
+    background: #fff;
+  }
+
+  .search-inner input::placeholder {
+    color: var(--ink-lighter);
+  }
+
+  .search-icon {
+    position: absolute;
+    right: .65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-lighter);
+    pointer-events: none;
+    font-size: .85rem;
+  }
+
+  .search-clear {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-lighter);
+    font-size: .8rem;
+    padding: .2rem .4rem;
+    display: none;
+  }
+
+  .search-clear.show {
+    display: inline-flex;
+  }
+
+  .search-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+    z-index: 200;
+    display: none;
+    scrollbar-width: thin;
+  }
+
+  .search-dropdown.open {
+    display: block;
+  }
+
+  .drop-item {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .5rem .85rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--rule);
+    transition: background .1s;
+  }
+
+  .drop-item:last-child {
+    border-bottom: none;
+  }
+
+  .drop-item:hover,
+  .drop-item.active-item {
+    background: var(--green-light);
+  }
+
+  .drop-img {
+    width: 34px;
+    height: 34px;
+    border-radius: 2px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--rule);
+    background: linear-gradient(135deg, #ede9e4, #d6d0ca);
+  }
+
+  .drop-img-ph {
+    width: 34px;
+    height: 34px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #ede9e4, #d6d0ca);
+    border: 1px solid var(--rule);
+  }
+
+  .drop-name {
+    font-size: .8rem;
+    color: var(--ink);
+    font-weight: 400;
+    line-height: 1.25;
+  }
+
+  .drop-cat {
+    font-size: .62rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--ink-lighter);
+  }
+
+  .drop-zone {
+    font-size: .62rem;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+  }
+
+  .drop-price {
+    font-size: .78rem;
+    color: var(--green);
+    margin-left: auto;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  /* ── Body ── */
+  .nav-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Legend ── */
+  .nav-legend {
+    width: 210px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--rule);
+    overflow-y: auto;
+    padding: .75rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    scrollbar-width: thin;
+  }
+
+  .legend-title {
+    font-size: .6rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-lighter);
+    margin-bottom: .25rem;
+    margin-top: .25rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .38rem .55rem;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background .12s, border-color .12s;
+    font-size: .76rem;
+    color: var(--ink);
+  }
+
+  .legend-item:hover {
+    background: var(--cream);
+    border-color: var(--rule);
+  }
+
+  .legend-item.active {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+    color: var(--green);
+  }
+
+  .legend-icon {
+    font-size: .88rem;
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+  }
+
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-count {
+    font-size: .62rem;
+    color: var(--ink-lighter);
+    margin-left: auto;
+    background: var(--cream);
+    padding: .05rem .3rem;
+    border-radius: 1px;
+  }
+
+  .legend-divider {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: .4rem 0;
+  }
+
+  .nav-hint {
+    margin-top: auto;
+    padding-top: .65rem;
+    border-top: 1px solid var(--rule);
+    font-size: .67rem;
+    color: var(--ink-lighter);
+    line-height: 1.65;
+  }
+
+  .nav-hint strong {
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: .2rem;
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  /* ── Map ── */
+  .map-container {
+    flex: 1;
+    overflow: auto;
+    background: var(--map-bg);
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+
+  .map-wrap {
+    position: relative;
+    display: inline-block;
+    min-width: 100%;
+    min-height: 100%;
+    padding: 1.5rem;
+  }
+
+  #storeMap {
+    display: block;
+    overflow: visible;
+    cursor: crosshair;
+    user-select: none;
+  }
+
+  /* Route */
+  #navRoutePath {
+    fill: none;
+    stroke: var(--route-color);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+
+  #navRoutePath.animating {
+    opacity: 1;
+    animation: drawRoute .8s ease forwards;
+  }
+
+  @keyframes drawRoute {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  #navRoute {
+    fill: none;
+    stroke: var(--route-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 8 5;
+    animation: dashMove .8s linear infinite;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+
+  #navRoute.visible {
+    opacity: 1;
+  }
+
+  @keyframes dashMove {
+    to {
+      stroke-dashoffset: -26;
+    }
+  }
+
+  #destPin {
+    opacity: 0;
+    transition: opacity .3s;
+  }
+
+  #destPin.visible {
+    opacity: 1;
+  }
+
+  .pin-pulse {
+    animation: pulsePin 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulsePin {
+
+    0%,
+    100% {
+      r: 10;
+      opacity: .3;
+    }
+
+    50% {
+      r: 18;
+      opacity: .1;
+    }
+  }
+
+  /* Product dots */
+  .prod-dot {
+    cursor: pointer;
+  }
+
+  .prod-dot circle.dot-bg {
+    transition: r .15s, opacity .15s;
+  }
+
+  .prod-dot:hover circle.dot-bg {
+    r: 7 !important;
+  }
+
+  .prod-dot.highlighted circle.dot-bg {
+    animation: pulseDot 1s ease-in-out infinite;
+  }
+
+  @keyframes pulseDot {
+
+    0%,
+    100% {
+      r: 7;
+      opacity: 1;
+    }
+
+    50% {
+      r: 10;
+      opacity: .7;
+    }
+  }
+
+  .prod-dot.highlighted circle.dot-ring {
+    animation: pulseRing 1s ease-in-out infinite;
+  }
+
+  @keyframes pulseRing {
+
+    0%,
+    100% {
+      r: 11;
+      opacity: .4;
+    }
+
+    50% {
+      r: 16;
+      opacity: .1;
+    }
+  }
+
+  /* Shelf */
+  .shelf-row {
+    pointer-events: none;
+  }
+
+  .shelf-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 7px;
+    fill: rgba(0, 0, 0, .3);
+    pointer-events: none;
+    letter-spacing: .05em;
+  }
+
+  .zone-title-text {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    pointer-events: none;
+  }
+
+  .zone-count-badge {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 7px;
+    pointer-events: none;
+  }
+
+  .entrance-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    fill: #fff;
+    font-weight: 500;
+  }
+
+  .aisle-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 8px;
+    fill: rgba(0, 0, 0, .25);
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  /* Tooltip */
+  #prodTooltip {
+    position: fixed;
+    display: none;
+    background: var(--ink);
+    color: var(--cream);
+    padding: .3rem .65rem;
+    border-radius: 2px;
+    font-size: .7rem;
+    letter-spacing: .03em;
+    pointer-events: none;
+    z-index: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+    max-width: 220px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+
+  #prodTooltip .tt-name {
+    font-weight: 400;
+  }
+
+  #prodTooltip .tt-cat {
+    font-size: .6rem;
+    opacity: .65;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  #prodTooltip .tt-price {
+    font-size: .75rem;
+    color: #a5d6a7;
+    margin-top: .15rem;
+  }
+
+  /* Product card */
+  #productCard {
+    position: fixed;
+    bottom: 1.75rem;
+    right: 1.75rem;
+    width: 272px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .14);
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity .22s, transform .22s;
+  }
+
+  #productCard.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+
+  .pcard-img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 3px 3px 0 0;
+    display: block;
+    background: linear-gradient(135deg, #ede9e4, #d6d0ca);
+  }
+
+  .pcard-img-ph {
+    width: 100%;
+    height: 130px;
+    background: linear-gradient(135deg, #ede9e4, #d6d0ca);
+    border-radius: 3px 3px 0 0;
+  }
+
+  .pcard-body {
+    padding: .75rem .9rem .9rem;
+  }
+
+  .pcard-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+
+  .pcard-cat {
+    font-size: .6rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--green);
+    margin-bottom: .18rem;
+  }
+
+  .pcard-name {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.25;
+    flex: 1;
+  }
+
+  .pcard-price {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .pcard-price sup {
+    font-size: .65rem;
+    font-weight: 400;
+    vertical-align: super;
+  }
+
+  .pcard-meta {
+    font-size: .72rem;
+    color: var(--ink-faint);
+    margin-top: .3rem;
+  }
+
+  .pcard-zone {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .63rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .2rem .5rem;
+    border-radius: 1px;
+    margin-top: .55rem;
+    background: var(--green-light);
+    color: var(--green);
+  }
+
+  .pcard-shelf {
+    font-size: .63rem;
+    color: var(--ink-lighter);
+    margin-top: .2rem;
+  }
+
+  .pcard-close {
+    position: absolute;
+    top: .5rem;
+    right: .5rem;
+    background: rgba(255, 255, 255, .9);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--ink-faint);
+    font-size: .75rem;
+    transition: background .12s;
+  }
+
+  .pcard-close:hover {
+    background: #fff;
+    color: var(--ink);
+  }
+
+  /* Status */
+  #statusBar {
+    position: absolute;
+    top: .9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--cream);
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: .42rem 1rem;
+    border-radius: 2px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+    z-index: 100;
+  }
+
+  #statusBar.show {
+    opacity: 1;
+  }
+
+  /* Loading overlay */
+  #mapLoading {
+    position: absolute;
+    inset: 0;
+    background: rgba(241, 239, 233, .85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 90;
+    transition: opacity .3s;
+  }
+
+  #mapLoading.done {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--rule);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin-bottom: .65rem;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-text {
+    font-size: .72rem;
+    color: var(--ink-faint);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .loading-sub {
+    font-size: .63rem;
+    color: var(--ink-lighter);
+    margin-top: .2rem;
+  }
+
+  /* Zoom */
+  .zoom-ctrl {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    z-index: 60;
+  }
+
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .9rem;
+    color: var(--ink-faint);
+    transition: background .12s, color .12s;
+    user-select: none;
+  }
+
+  .zoom-btn:hover {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  /* No-products hint */
+  .zone-empty-hint {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 8px;
+    fill: rgba(0, 0, 0, .3);
+    font-style: italic;
+    pointer-events: none;
+  }
+
+  @media(max-width:767px) {
+    .nav-body {
+      flex-direction: column;
+    }
+
+    .nav-legend {
+      width: 100%;
+      height: 90px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: .3rem;
+      padding: .5rem .65rem;
+    }
+
+    .legend-item {
+      flex-shrink: 0;
+      font-size: .7rem;
+    }
+
+    .nav-hint,
+    .legend-divider+* {
+      display: none;
+    }
+
+    #productCard {
+      bottom: .75rem;
+      right: .75rem;
+      left: .75rem;
+      width: auto;
+    }
+  }
+</style>
+
+{# ── PAGE STRUCTURE ── #}
+<div class="nav-page">
+
+  <div class="nav-topbar">
+    <a href="{% url 'customer_dashboard' %}" class="nav-back"><i class="bi bi-arrow-left"></i> Back</a>
+    <h1 class="nav-title">🗺 Store Navigator</h1>
+    <div class="nav-stats">
+      <div><strong id="statProducts">—</strong>products</div>
+      <div><strong id="statZones">—</strong>zones</div>
+    </div>
+  </div>
+
+  <div class="search-panel">
+    <div class="search-inner" id="searchWrap">
+      <input type="search" id="navSearch" placeholder="Search any product to locate it on the map…" autocomplete="off"
+        spellcheck="false">
+      <i class="bi bi-search search-icon"></i>
+      <div class="search-dropdown" id="searchDropdown"></div>
+    </div>
+  </div>
+
+  <div class="nav-body">
+
+    <div class="nav-legend" id="legendPanel">
+      <p class="legend-title">Store Zones</p>
+      <hr class="legend-divider">
+      <div class="nav-hint">
+        <strong>How to use</strong>
+        🔍 Search a product → it's highlighted on the map with a route from the entrance.<br><br>
+        🖱 Hover any dot → see product name.<br><br>
+        🖱 Click any dot → view full details.
+      </div>
+    </div>
+
+    <div class="map-container" id="mapContainer">
+      <div class="map-wrap" id="mapWrap">
+
+        <div id="statusBar"></div>
+
+        <div id="mapLoading">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">Building store map…</div>
+          <div class="loading-sub" id="loadingSubText">Fetching products</div>
+        </div>
+
+        {# SVG is sized by JS after load #}
+        <svg id="storeMap" viewBox="0 0 940 700" xmlns="http://www.w3.org/2000/svg" width="940" height="700">
+
+          {# Store shell #}
+          <rect x="4" y="4" width="932" height="692" rx="6" fill="#fdfbf8" stroke="#c8c2ba" stroke-width="2" />
+
+          {# Main aisle horizontal lines #}
+          <rect x="4" y="174" width="932" height="12" fill="#e2dcd5" opacity=".6" />
+          <rect x="4" y="346" width="932" height="12" fill="#e2dcd5" opacity=".6" />
+          <rect x="4" y="518" width="932" height="12" fill="#e2dcd5" opacity=".6" />
+          {# Vertical aisle center #}
+          <rect x="458" y="4" width="12" height="692" fill="#e2dcd5" opacity=".5" />
+
+          {# Aisle labels #}
+          <text x="450" y="184" class="aisle-text" text-anchor="middle">MAIN AISLE 1</text>
+          <text x="450" y="356" class="aisle-text" text-anchor="middle">MAIN AISLE 2</text>
+          <text x="450" y="528" class="aisle-text" text-anchor="middle">MAIN AISLE 3</text>
+
+          {# ── ZONE RECTS (static background only, JS adds shelves + products) ── #}
+
+          {# ROW 1 #}
+          <rect id="bg-zone-fruits" x="18" y="18" width="208" height="144" rx="4" fill="#c8e6c9" stroke="#a5d6a7"
+            stroke-width="1.5" />
+          <rect id="bg-zone-dairy" x="242" y="18" width="198" height="144" rx="4" fill="#fff9c4" stroke="#fff176"
+            stroke-width="1.5" />
+          <rect id="bg-zone-bakery" x="456" y="18" width="198" height="144" rx="4" fill="#ffe0b2" stroke="#ffcc80"
+            stroke-width="1.5" />
+          <rect id="bg-zone-meat" x="670" y="18" width="262" height="144" rx="4" fill="#fce4ec" stroke="#f48fb1"
+            stroke-width="1.5" />
+
+          {# ROW 2 #}
+          <rect id="bg-zone-snacks" x="18" y="188" width="208" height="144" rx="4" fill="#f3e5f5" stroke="#ce93d8"
+            stroke-width="1.5" />
+          <rect id="bg-zone-beverages" x="242" y="188" width="198" height="144" rx="4" fill="#e3f2fd" stroke="#90caf9"
+            stroke-width="1.5" />
+          <rect id="bg-zone-frozen" x="456" y="188" width="198" height="144" rx="4" fill="#e0f7fa" stroke="#80deea"
+            stroke-width="1.5" />
+          <rect id="bg-zone-condiments" x="670" y="188" width="262" height="144" rx="4" fill="#fbe9e7" stroke="#ffab91"
+            stroke-width="1.5" />
+
+          {# ROW 3 #}
+          <rect id="bg-zone-personal" x="18" y="360" width="208" height="144" rx="4" fill="#e8eaf6" stroke="#9fa8da"
+            stroke-width="1.5" />
+          <rect id="bg-zone-household" x="242" y="360" width="198" height="144" rx="4" fill="#f9fbe7" stroke="#dce775"
+            stroke-width="1.5" />
+          <rect id="bg-zone-baby" x="456" y="360" width="198" height="144" rx="4" fill="#fff3e0" stroke="#ffcc80"
+            stroke-width="1.5" />
+          <rect id="bg-zone-health" x="670" y="360" width="262" height="144" rx="4" fill="#e8f5e9" stroke="#a5d6a7"
+            stroke-width="1.5" />
+
+          {# ROW 4 #}
+          <rect id="bg-zone-cereals" x="18" y="532" width="292" height="120" rx="4" fill="#efebe9" stroke="#d7ccc8"
+            stroke-width="1.5" />
+          <rect id="bg-zone-cleaning" x="326" y="532" width="284" height="120" rx="4" fill="#e1f5fe" stroke="#81d4fa"
+            stroke-width="1.5" />
+          <rect id="bg-zone-general" x="626" y="532" width="306" height="120" rx="4" fill="#f5f5f5" stroke="#e0e0e0"
+            stroke-width="1.5" />
+
+          {# ── Dynamic content injected here by JS ── #}
+          <g id="shelvesGroup"></g>
+          <g id="dotsGroup"></g>
+
+          {# ── Route overlay ── #}
+          <path id="navRoutePath" d="" />
+          <path id="navRoute" d="" />
+
+          {# ── Destination pin ── #}
+          <g id="destPin">
+            <circle class="pin-pulse" cx="0" cy="0" r="10" fill="#e53935" opacity=".25" />
+            <circle cx="0" cy="0" r="6" fill="#e53935" stroke="#fff" stroke-width="2" />
+            <circle cx="0" cy="0" r="2" fill="#fff" />
+          </g>
+
+          {# ── Entrance ── #}
+          <g>
+            <rect x="400" y="680" width="140" height="16" rx="3" fill="#1565c0" opacity=".85" />
+            <text x="470" y="692" text-anchor="middle" class="entrance-label" font-size="9">▲ ENTRANCE / EXIT</text>
+          </g>
+          <circle cx="470" cy="676" r="4" fill="#1565c0" opacity=".65" />
+
+        </svg>
+
+        {# Tooltip #}
+        <div id="prodTooltip">
+          <div class="tt-name" id="ttName"></div>
+          <div class="tt-cat" id="ttCat"></div>
+          <div class="tt-price" id="ttPrice"></div>
+        </div>
+
+        <div class="zoom-ctrl">
+          <button class="zoom-btn" id="zoomIn" title="Zoom in"><i class="bi bi-plus-lg"></i></button>
+          <button class="zoom-btn" id="zoomOut" title="Zoom out"><i class="bi bi-dash-lg"></i></button>
+          <button class="zoom-btn" id="zoomReset" title="Reset"><i class="bi bi-fullscreen-exit"></i></button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Product card ── #}
+<div id="productCard">
+  <button class="pcard-close" id="pcardClose"><i class="bi bi-x"></i></button>
+  <div id="pcardImgWrap"></div>
+  <div class="pcard-body">
+    <div class="pcard-cat" id="pcardCat"></div>
+    <div class="pcard-row">
+      <div class="pcard-name" id="pcardName"></div>
+      <div class="pcard-price"><sup>₹</sup><span id="pcardPrice"></span></div>
+    </div>
+    <div class="pcard-meta" id="pcardMeta"></div>
+    <div class="pcard-zone" id="pcardZone"><i class="bi bi-geo-alt-fill"></i><span></span></div>
+    <div class="pcard-shelf" id="pcardShelf"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    'use strict';
+
+    /* ══════════════════════════════════════════════
+       ZONE DEFINITIONS  (id, bounds, keywords)
+    ══════════════════════════════════════════════ */
+    const ZONE_MAP = [
+      {
+        id: 'zone-fruits', label: 'Fruits & Veg', icon: '🥦', aisle: 'A1',
+        x: 18, y: 18, w: 208, h: 144, color: '#c8e6c9', tc: '#2e7d32', sc: 'rgba(255,255,255,.5)',
+        keywords: ['fruit', 'vegetable', 'veg', 'veggie', 'fresh', 'salad', 'herb', 'organic', 'green', 'leafy', 'produce', 'tomato', 'potato', 'onion', 'mango', 'banana', 'apple', 'spinach', 'carrot']
+      },
+      {
+        id: 'zone-dairy', label: 'Dairy & Eggs', icon: '🥛', aisle: 'A2',
+        x: 242, y: 18, w: 198, h: 144, color: '#fff9c4', tc: '#f57f17', sc: 'rgba(255,255,255,.5)',
+        keywords: ['dairy', 'milk', 'cheese', 'butter', 'egg', 'curd', 'yoghurt', 'paneer', 'cream', 'ghee', 'lassi']
+      },
+      {
+        id: 'zone-bakery', label: 'Bakery', icon: '🍞', aisle: 'A3',
+        x: 456, y: 18, w: 198, h: 144, color: '#ffe0b2', tc: '#e65100', sc: 'rgba(255,255,255,.5)',
+        keywords: ['bakery', 'bread', 'biscuit', 'cake', 'pastry', 'cookie', 'rusk', 'bun', 'croissant', 'muffin', 'wheat bread']
+      },
+      {
+        id: 'zone-meat', label: 'Meat & Seafood', icon: '🥩', aisle: 'A4',
+        x: 670, y: 18, w: 262, h: 144, color: '#fce4ec', tc: '#880e4f', sc: 'rgba(255,255,255,.5)',
+        keywords: ['meat', 'seafood', 'fish', 'chicken', 'mutton', 'prawn', 'poultry', 'sausage', 'egg white', 'tuna']
+      },
+      {
+        id: 'zone-snacks', label: 'Snacks', icon: '🍿', aisle: 'B1',
+        x: 18, y: 188, w: 208, h: 144, color: '#f3e5f5', tc: '#6a1b9a', sc: 'rgba(255,255,255,.5)',
+        keywords: ['snack', 'chips', 'namkeen', 'popcorn', 'crisp', 'fryum', 'noodle', 'instant', 'wafer', 'kurkure', 'lays', 'munchies']
+      },
+      {
+        id: 'zone-beverages', label: 'Beverages', icon: '☕', aisle: 'B2',
+        x: 242, y: 188, w: 198, h: 144, color: '#e3f2fd', tc: '#0d47a1', sc: 'rgba(255,255,255,.5)',
+        keywords: ['beverage', 'drink', 'juice', 'cola', 'soda', 'coffee', 'tea', 'water', 'energy', 'squash', 'smoothie', 'nectar']
+      },
+      {
+        id: 'zone-frozen', label: 'Frozen Foods', icon: '❄', aisle: 'B3',
+        x: 456, y: 188, w: 198, h: 144, color: '#e0f7fa', tc: '#006064', sc: 'rgba(255,255,255,.5)',
+        keywords: ['frozen', 'ice cream', 'icecream', 'gelato', 'ice', 'freeze', 'frost']
+      },
+      {
+        id: 'zone-condiments', label: 'Condiments & Spices', icon: '🧂', aisle: 'B4',
+        x: 670, y: 188, w: 262, h: 144, color: '#fbe9e7', tc: '#bf360c', sc: 'rgba(255,255,255,.5)',
+        keywords: ['sauce', 'ketchup', 'pickle', 'chutney', 'spice', 'masala', 'oil', 'condiment', 'vinegar', 'mustard', 'salt', 'pepper', 'cumin', 'turmeric']
+      },
+      {
+        id: 'zone-personal', label: 'Personal Care', icon: '🪥', aisle: 'C1',
+        x: 18, y: 360, w: 208, h: 144, color: '#e8eaf6', tc: '#283593', sc: 'rgba(255,255,255,.5)',
+        keywords: ['personal care', 'shampoo', 'soap', 'toothpaste', 'toothbrush', 'deodorant', 'lotion', 'skincare', 'hair', 'face wash', 'conditioner', 'moisturizer']
+      },
+      {
+        id: 'zone-household', label: 'Household', icon: '🧹', aisle: 'C2',
+        x: 242, y: 360, w: 198, h: 144, color: '#f9fbe7', tc: '#558b2f', sc: 'rgba(255,255,255,.5)',
+        keywords: ['household', 'kitchen', 'utensil', 'detergent', 'toilet', 'tissue', 'paper', 'mop', 'broom', 'bucket', 'rag']
+      },
+      {
+        id: 'zone-baby', label: 'Baby & Kids', icon: '👶', aisle: 'C3',
+        x: 456, y: 360, w: 198, h: 144, color: '#fff3e0', tc: '#e65100', sc: 'rgba(255,255,255,.5)',
+        keywords: ['baby', 'kid', 'diaper', 'nappy', 'formula', 'infant', 'child', 'toy', 'cerelac']
+      },
+      {
+        id: 'zone-health', label: 'Health & Wellness', icon: '💊', aisle: 'C4',
+        x: 670, y: 360, w: 262, h: 144, color: '#e8f5e9', tc: '#1b5e20', sc: 'rgba(255,255,255,.5)',
+        keywords: ['health', 'medicine', 'supplement', 'vitamin', 'protein', 'wellness', 'ayurvedic', 'tablet', 'capsule', 'immunity']
+      },
+      {
+        id: 'zone-cereals', label: 'Cereals & Grains', icon: '🌾', aisle: 'D1',
+        x: 18, y: 532, w: 292, h: 120, color: '#efebe9', tc: '#4e342e', sc: 'rgba(255,255,255,.5)',
+        keywords: ['cereal', 'grain', 'rice', 'wheat', 'oat', 'pulse', 'lentil', 'dal', 'atta', 'flour', 'millet', 'quinoa', 'barley']
+      },
+      {
+        id: 'zone-cleaning', label: 'Cleaning Supplies', icon: '🧽', aisle: 'D2',
+        x: 326, y: 532, w: 284, h: 120, color: '#e1f5fe', tc: '#01579b', sc: 'rgba(255,255,255,.5)',
+        keywords: ['clean', 'washing', 'detergent', 'phenyl', 'bleach', 'disinfect', 'surf', 'vim', 'harpic', 'lizol', 'dettol']
+      },
+      {
+        id: 'zone-general', label: 'General', icon: '📦', aisle: 'D3',
+        x: 626, y: 532, w: 306, h: 120, color: '#f5f5f5', tc: '#424242', sc: 'rgba(255,255,255,.5)',
+        keywords: []
+      },  // catch-all
+    ];
+
+    /* ── Entrance point ── */
+    const ENTRANCE = { x: 470, y: 672 };
+
+    /* ── state ── */
+    let allProducts = [];
+    let currentScale = 1;
+    let highlightedDotEl = null;
+    let statusTimer = null;
+    let tooltipVisible = false;
+
+    /* ── DOM refs ── */
+    const searchInput = document.getElementById('navSearch');
+    const dropdown = document.getElementById('searchDropdown');
+    const legendPanel = document.getElementById('legendPanel');
+    const productCard = document.getElementById('productCard');
+    const pcardClose = document.getElementById('pcardClose');
+    const pcardImgWrap = document.getElementById('pcardImgWrap');
+    const pcardCat = document.getElementById('pcardCat');
+    const pcardName = document.getElementById('pcardName');
+    const pcardMeta = document.getElementById('pcardMeta');
+    const pcardPrice = document.getElementById('pcardPrice');
+    const pcardZoneEl = document.getElementById('pcardZone');
+    const pcardShelf = document.getElementById('pcardShelf');
+    const destPin = document.getElementById('destPin');
+    const navRoute = document.getElementById('navRoute');
+    const navRoutePath = document.getElementById('navRoutePath');
+    const statusBar = document.getElementById('statusBar');
+    const shelvesGroup = document.getElementById('shelvesGroup');
+    const dotsGroup = document.getElementById('dotsGroup');
+    const tooltip = document.getElementById('prodTooltip');
+    const ttName = document.getElementById('ttName');
+    const ttCat = document.getElementById('ttCat');
+    const ttPrice = document.getElementById('ttPrice');
+    const mapLoading = document.getElementById('mapLoading');
+    const loadingSubText = document.getElementById('loadingSubText');
+    const statProducts = document.getElementById('statProducts');
+    const statZones = document.getElementById('statZones');
+
+    /* ════════════════════════════════════════
+       ZONE HELPER
+    ════════════════════════════════════════ */
+    function zoneForProduct(p) {
+      const hay = ((p.category || '') + ' ' + (p.name || '')).toLowerCase();
+      for (const z of ZONE_MAP) {
+        if (z.keywords.some(k => hay.includes(k))) return z;
+      }
+      return ZONE_MAP[ZONE_MAP.length - 1];
+    }
+
+    /* ════════════════════════════════════════
+       SLOT POSITION  (product → SVG xy)
+    ════════════════════════════════════════ */
+    const TITLE_H = 26;   // px reserved for zone title header
+    const SHELF_H = 28;   // height of one shelf row
+    const SHELF_GAP = 7;    // gap between shelves (aisle lanes)
+    const MARGIN_X = 10;   // horizontal margin inside zone
+    const DOT_R = 5;    // product dot radius
+    const DOT_STEP = 13;   // dots spaced 13px apart (center-to-center)
+
+    function slotPosition(zone, idx) {
+      const cols = Math.floor((zone.w - MARGIN_X * 2) / DOT_STEP);
+      const row = Math.floor(idx / cols);
+      if (row >= 3) return null;      // max 3 shelf rows
+      const col = idx % cols;
+      const x = zone.x + MARGIN_X + col * DOT_STEP + DOT_STEP / 2;
+      const y = zone.y + TITLE_H + row * (SHELF_H + SHELF_GAP) + SHELF_H / 2;
+      return { x, y, row, col };
+    }
+
+    function maxDotsForZone(z) {
+      const cols = Math.floor((z.w - MARGIN_X * 2) / DOT_STEP);
+      return cols * 3;
+    }
+
+    /* ════════════════════════════════════════
+       LOAD PRODUCTS  (all pages, max 8)
+    ════════════════════════════════════════ */
+    async function loadAllProducts() {
+      let page = 1, hasNext = true;
+      while (hasNext && page <= 8) {
+        try {
+          loadingSubText.textContent = `Loading page ${page}…`;
+          const res = await fetch(`/api/products/?page=${page}&sort=name_asc`);
+          const data = await res.json();
+          allProducts.push(...data.products);
+          hasNext = data.has_next;
+          page++;
+        } catch { break; }
+      }
+      statProducts.textContent = allProducts.length;
+      renderMap();
+      buildLegend();
+      mapLoading.classList.add('done');
+    }
+
+    /* ════════════════════════════════════════
+       RENDER MAP  (shelves + product dots)
+    ════════════════════════════════════════ */
+    function renderMap() {
+      // Group products by zone
+      const byZone = {};
+      ZONE_MAP.forEach(z => byZone[z.id] = []);
+      allProducts.forEach(p => {
+        const z = zoneForProduct(p);
+        byZone[z.id].push(p);
+      });
+
+      // Build SVG markup in one pass
+      let shelfSvg = '';
+      let dotSvg = '';
+
+      ZONE_MAP.forEach(z => {
+        const prods = byZone[z.id];
+        const cap = maxDotsForZone(z);
+
+        // ── Static zone title ──
+        shelfSvg += `
+      <text x="${z.x + z.w / 2}" y="${z.y + 15}" text-anchor="middle"
+            class="zone-title-text" fill="${z.tc}">
+        ${z.icon} ${z.label.toUpperCase()}
+      </text>
+      <text x="${z.x + z.w - 5}" y="${z.y + 15}" text-anchor="end"
+            class="zone-count-badge" fill="${z.tc}" opacity=".7">
+        ${prods.length} items
+      </text>`;
+
+        // ── Aisle/shelf row backgrounds ──
+        for (let shelf = 0; shelf < 3; shelf++) {
+          const sy = z.y + TITLE_H + shelf * (SHELF_H + SHELF_GAP);
+          shelfSvg += `
+        <rect class="shelf-row"
+              x="${z.x + 5}" y="${sy}"
+              width="${z.w - 10}" height="${SHELF_H}"
+              rx="2" fill="rgba(255,255,255,.55)" stroke="rgba(0,0,0,.05)" stroke-width=".5"/>
+        <text x="${z.x + 8}" y="${sy + SHELF_H - 4}"
+              class="shelf-label">S${shelf + 1}</text>`;
+        }
+
+        // ── Product dots ──
+        const shown = prods.slice(0, cap);
+        shown.forEach((p, idx) => {
+          const pos = slotPosition(z, idx);
+          if (!pos) return;
+
+          // Store position on product object for routing
+          p._svgX = pos.x;
+          p._svgY = pos.y;
+          p._zone = z;
+          p._shelf = pos.row + 1;
+
+          dotSvg += `
+        <g class="prod-dot" data-pid="${p.id}"
+           data-name="${esc(p.name)}"
+           data-cat="${esc(p.category || '')}"
+           data-price="${esc(p.mrp)}"
+           data-zone="${z.id}"
+           data-shelf="${pos.row + 1}">
+          <circle class="dot-ring" cx="${pos.x}" cy="${pos.y}" r="0" fill="${z.tc}" opacity=".2"/>
+          <circle class="dot-bg" cx="${pos.x}" cy="${pos.y}" r="${DOT_R}"
+                  fill="${z.tc}" stroke="#fff" stroke-width="1.2" opacity=".82"/>
+        </g>`;
+        });
+
+        // ── hint if zone has more products than shown ──
+        if (prods.length > cap) {
+          const lastY = z.y + z.h - 7;
+          shelfSvg += `
+        <text x="${z.x + z.w / 2}" y="${lastY}" text-anchor="middle"
+              class="zone-empty-hint">
+          +${prods.length - cap} more products
+        </text>`;
+        } else if (prods.length === 0) {
+          shelfSvg += `
+        <text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" text-anchor="middle"
+              class="zone-empty-hint">No products mapped</text>`;
+        }
+      });
+
+      shelvesGroup.innerHTML = shelfSvg;
+      dotsGroup.innerHTML = dotSvg;
+
+      // Attach events to dots
+      dotsGroup.querySelectorAll('.prod-dot').forEach(g => {
+        g.addEventListener('mouseenter', onDotEnter);
+        g.addEventListener('mousemove', onDotMove);
+        g.addEventListener('mouseleave', onDotLeave);
+        g.addEventListener('click', onDotClick);
+      });
+
+      // Active zone count
+      const activeZones = ZONE_MAP.filter(z => byZone[z.id].length > 0).length;
+      statZones.textContent = activeZones;
+    }
+
+    /* ════════════════════════════════════════
+       DOT EVENTS
+    ════════════════════════════════════════ */
+    function onDotEnter(e) {
+      const g = e.currentTarget;
+      ttName.textContent = g.dataset.name;
+      ttCat.textContent = g.dataset.cat;
+      ttPrice.textContent = g.dataset.price ? '₹' + g.dataset.price : '';
+      tooltip.style.display = 'block';
+      tooltipVisible = true;
+    }
+    function onDotMove(e) {
+      if (!tooltipVisible) return;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      // keep in viewport
+      const rect = tooltip.getBoundingClientRect();
+      if (rect.right > window.innerWidth - 10)
+        tooltip.style.left = (e.clientX - rect.width - 14) + 'px';
+    }
+    function onDotLeave() {
+      tooltip.style.display = 'none';
+      tooltipVisible = false;
+    }
+    function onDotClick(e) {
+      e.stopPropagation();
+      tooltip.style.display = 'none';
+      const pid = +e.currentTarget.dataset.pid;
+      const product = allProducts.find(p => p.id === pid);
+      if (product) navigateTo(product);
+    }
+
+    /* ════════════════════════════════════════
+       NAVIGATE TO PRODUCT
+    ════════════════════════════════════════ */
+    function navigateTo(product) {
+      const zone = product._zone || zoneForProduct(product);
+
+      // Find slot if not already mapped
+      if (!product._svgX) {
+        const byZone = {};
+        ZONE_MAP.forEach(z => byZone[z.id] = []);
+        allProducts.forEach(p => { const z = zoneForProduct(p); byZone[z.id].push(p); });
+        const list = byZone[zone.id];
+        const idx = list.indexOf(product);
+        const pos = idx >= 0 ? slotPosition(zone, idx) : null;
+        if (pos) { product._svgX = pos.x; product._svgY = pos.y; product._shelf = pos.row + 1; }
+        else { product._svgX = zone.x + zone.w / 2; product._svgY = zone.y + zone.h / 2; }
+        product._zone = zone;
+      }
+
+      const dest = { x: product._svgX, y: product._svgY };
+
+      // Move & show pin
+      destPin.setAttribute('transform', `translate(${dest.x},${dest.y})`);
+      destPin.classList.add('visible');
+
+      // Draw route
+      const routeD = buildRoute(ENTRANCE, dest);
+      navRoutePath.setAttribute('d', routeD);
+      navRoute.setAttribute('d', routeD);
+      navRoutePath.classList.remove('animating');
+      void navRoutePath.offsetWidth;
+      navRoutePath.classList.add('animating');
+      navRoute.classList.add('visible');
+
+      // Highlight dot
+      clearHighlight();
+      const dotG = dotsGroup.querySelector(`[data-pid="${product.id}"]`);
+      if (dotG) {
+        dotG.classList.add('highlighted');
+        highlightedDotEl = dotG;
+        const ringEl = dotG.querySelector('.dot-ring');
+        if (ringEl) { ringEl.setAttribute('r', '12'); }
+      }
+
+      // Highlight zone
+      resetZoneOpacity();
+      highlightZoneBg(zone.id);
+
+      // Legend
+      legendPanel.querySelectorAll('.legend-item').forEach(i =>
+        i.classList.toggle('active', i.dataset.zoneId === zone.id));
+
+      // Show product card
+      showProductCard(product, zone);
+
+      // Status
+      showStatus(`📍 ${product.name} → ${zone.label}, Shelf ${product._shelf || '?'}, Aisle ${zone.aisle}`);
+
+      // Scroll to dot
+      scrollToPoint(dest);
+    }
+
+    /* ── L-shaped route: entrance → horizontal → vertical to dest ── */
+    function buildRoute(from, to) {
+      // Go up from entrance to dest.y row, then across to dest.x
+      return `M ${from.x} ${from.y} L ${from.x} ${to.y} L ${to.x} ${to.y}`;
+    }
+
+    /* ── Scroll map so the navigated-to dot is centred ── */
+    function scrollToPoint(dest) {
+      const mc = document.getElementById('mapContainer');
+      const svg = document.getElementById('storeMap');
+      const vbW = 940, vbH = 700;
+      const svgRect = svg.getBoundingClientRect();
+      const px = (dest.x / vbW) * svgRect.width;
+      const py = (dest.y / vbH) * svgRect.height;
+      mc.scrollTo({
+        left: mc.scrollLeft + px - mc.clientWidth / 2,
+        top: mc.scrollTop + py - mc.clientHeight / 2,
+        behavior: 'smooth'
+      });
+    }
+
+    /* ════════════════════════════════════════
+       ZONE HIGHLIGHT
+    ════════════════════════════════════════ */
+    function resetZoneOpacity() {
+      document.querySelectorAll('[id^="bg-zone-"]').forEach(r => {
+        r.style.opacity = '';
+        r.style.strokeWidth = '1.5';
+      });
+    }
+    function highlightZoneBg(zoneId) {
+      const rect = document.getElementById('bg-' + zoneId);
+      if (rect) {
+        rect.style.strokeWidth = '3';
+        rect.style.filter = 'drop-shadow(0 0 6px rgba(0,0,0,.22))';
+        // dim other zones
+        document.querySelectorAll('[id^="bg-zone-"]').forEach(r => {
+          if (r !== rect) r.style.opacity = '0.55';
+        });
+      }
+    }
+    function clearHighlight() {
+      if (highlightedDotEl) {
+        highlightedDotEl.classList.remove('highlighted');
+        const ring = highlightedDotEl.querySelector('.dot-ring');
+        if (ring) ring.setAttribute('r', '0');
+        highlightedDotEl = null;
+      }
+    }
+    function clearAll() {
+      clearHighlight();
+      navRoute.classList.remove('visible');
+      navRoutePath.classList.remove('animating');
+      navRoutePath.setAttribute('d', '');
+      navRoute.setAttribute('d', '');
+      destPin.classList.remove('visible');
+      resetZoneOpacity();
+      productCard.classList.remove('open');
+      legendPanel.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
+    }
+
+    /* ════════════════════════════════════════
+       PRODUCT CARD
+    ════════════════════════════════════════ */
+    function showProductCard(product, zone) {
+      if (product.image_url) {
+        pcardImgWrap.innerHTML = `<img class="pcard-img" src="${esc(product.image_url)}" alt="${esc(product.name)}" loading="lazy">`;
+      } else {
+        pcardImgWrap.innerHTML = `<div class="pcard-img-ph"></div>`;
+      }
+      pcardCat.textContent = product.category || '';
+      pcardName.textContent = product.name;
+      pcardPrice.textContent = product.mrp;
+      pcardMeta.textContent = product.unit ? `Unit: ${product.unit}` : '';
+      pcardZoneEl.querySelector('span').textContent = `${zone.icon} ${zone.label}`;
+      pcardShelf.textContent = product._shelf ? `Aisle ${zone.aisle} · Shelf ${product._shelf}` : `Aisle ${zone.aisle}`;
+      productCard.classList.add('open');
+    }
+
+    pcardClose.addEventListener('click', clearAll);
+
+    /* ════════════════════════════════════════
+       STATUS BAR
+    ════════════════════════════════════════ */
+    function showStatus(msg) {
+      clearTimeout(statusTimer);
+      statusBar.textContent = msg;
+      statusBar.classList.add('show');
+      statusTimer = setTimeout(() => statusBar.classList.remove('show'), 3500);
+    }
+
+    /* ════════════════════════════════════════
+       LEGEND
+    ════════════════════════════════════════ */
+    function buildLegend() {
+      const byZone = {};
+      ZONE_MAP.forEach(z => byZone[z.id] = 0);
+      allProducts.forEach(p => {
+        const z = zoneForProduct(p);
+        byZone[z.id]++;
+      });
+
+      legendPanel.querySelectorAll('.dyn-leg').forEach(el => el.remove());
+      const divider = legendPanel.querySelector('.legend-divider');
+
+      ZONE_MAP.forEach(z => {
+        if (!byZone[z.id]) return;
+        const item = document.createElement('div');
+        item.className = 'legend-item dyn-leg';
+        item.dataset.zoneId = z.id;
+        item.innerHTML = `
+      <span class="legend-icon">${z.icon}</span>
+      <span style="flex:1">${z.label}</span>
+      <span class="legend-count">${byZone[z.id]}</span>`;
+        item.addEventListener('click', () => filterByZone(z));
+        legendPanel.insertBefore(item, divider);
+      });
+    }
+
+    function filterByZone(zone) {
+      clearAll();
+      highlightZoneBg(zone.id);
+      legendPanel.querySelectorAll('.legend-item').forEach(i =>
+        i.classList.toggle('active', i.dataset.zoneId === zone.id));
+      /* Show the first product of this zone in the card */
+      const first = allProducts.find(p => zoneForProduct(p).id === zone.id);
+      if (first) showProductCard(first, zone);
+      showStatus(`${zone.icon} ${zone.label} — ${ZONE_MAP.find(z => z.id === zone.id) ? 'Aisle ' + zone.aisle : ''} — click any dot to navigate`);
+    }
+
+    /* ════════════════════════════════════════
+       SEARCH AUTOCOMPLETE
+    ════════════════════════════════════════ */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    let debTimer, dropIdx = -1;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debTimer);
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) { dropdown.classList.remove('open'); dropIdx = -1; return; }
+      debTimer = setTimeout(() => renderDropdown(q), 200);
+    });
+
+    searchInput.addEventListener('keydown', e => {
+      const items = [...dropdown.querySelectorAll('.drop-item')];
+      if (e.key === 'ArrowDown') { e.preventDefault(); dropIdx = Math.min(dropIdx + 1, items.length - 1); refreshActiveItem(items); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); dropIdx = Math.max(dropIdx - 1, 0); refreshActiveItem(items); }
+      if (e.key === 'Enter' && dropIdx >= 0 && items[dropIdx]) { items[dropIdx].click(); }
+      if (e.key === 'Escape') { dropdown.classList.remove('open'); dropIdx = -1; }
+    });
+
+    function refreshActiveItem(items) {
+      items.forEach((it, i) => it.classList.toggle('active-item', i === dropIdx));
+      if (items[dropIdx]) items[dropIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#searchWrap')) {
+        dropdown.classList.remove('open'); dropIdx = -1;
+      }
+    });
+
+    function renderDropdown(q) {
+      const matches = allProducts
+        .filter(p => p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q))
+        .slice(0, 14);
+
+      if (!matches.length) { dropdown.classList.remove('open'); return; }
+
+      dropdown.innerHTML = matches.map(p => {
+        const zone = zoneForProduct(p);
+        const imgH = p.image_url
+          ? `<img class="drop-img" src="${esc(p.image_url)}" alt="" loading="lazy">`
+          : `<div class="drop-img-ph"></div>`;
+        return `
+      <div class="drop-item" data-pid="${p.id}">
+        ${imgH}
+        <div style="flex:1;min-width:0">
+          <div class="drop-name">${esc(p.name)}</div>
+          <div class="drop-cat">${esc(p.category || '')}</div>
+          <div class="drop-zone">${zone.icon} ${zone.label} · Aisle ${zone.aisle}</div>
+        </div>
+        <div class="drop-price">₹${esc(p.mrp)}</div>
+      </div>`;
+      }).join('');
+
+      dropdown.classList.add('open');
+      dropIdx = -1;
+
+      dropdown.querySelectorAll('.drop-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const pid = +el.dataset.pid;
+          const product = allProducts.find(p => p.id === pid);
+          if (product) {
+            searchInput.value = product.name;
+            dropdown.classList.remove('open');
+            navigateTo(product);
+          }
+        });
+      });
+    }
+
+    /* ════════════════════════════════════════
+       ZOOM
+    ════════════════════════════════════════ */
+    function applyScale(s) {
+      currentScale = Math.min(3, Math.max(0.4, s));
+      const svg = document.getElementById('storeMap');
+      svg.style.transform = `scale(${currentScale})`;
+      svg.style.transformOrigin = 'top left';
+    }
+    document.getElementById('zoomIn').addEventListener('click', () => applyScale(currentScale + 0.2));
+    document.getElementById('zoomOut').addEventListener('click', () => applyScale(currentScale - 0.2));
+    document.getElementById('zoomReset').addEventListener('click', () => applyScale(1));
+
+    /* pinch zoom */
+    let t0 = null, s0 = 1;
+    const mc = document.getElementById('mapContainer');
+    mc.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        t0 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        s0 = currentScale;
+      }
+    }, { passive: true });
+    mc.addEventListener('touchmove', e => {
+      if (e.touches.length === 2 && t0) {
+        const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        applyScale(s0 * (d / t0));
+      }
+    }, { passive: true });
+    mc.addEventListener('touchend', () => t0 = null, { passive: true });
+    mc.addEventListener('wheel', e => {
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); applyScale(currentScale + (e.deltaY < 0 ? 0.13 : -0.13)); }
+    }, { passive: false });
+
+    /* ── dismiss by clicking empty map area ── */
+    document.getElementById('storeMap').addEventListener('click', e => {
+      if (!e.target.closest('.prod-dot')) clearAll();
+    });
+
+    /* ════════════════════════════════════════
+       BOOT
+    ════════════════════════════════════════ */
+    loadAllProducts();
+
+  })();
+</script>
+{% endblock %}

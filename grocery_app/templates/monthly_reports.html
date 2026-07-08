@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block title %}Smart Grocery – Monthly Insights{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --indigo-600: #4f46e5;
+        --slate-900: #0f172a;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+    }
+
+    body { background: var(--bg-soft); }
+
+    .analytics-title {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--slate-900);
+    }
+
+    /* Glass KPI Cards */
+    .kpi-card-bento {
+        background: white;
+        border: 1px solid rgba(0,0,0,0.03);
+        border-radius: 20px;
+        padding: 1.5rem;
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .kpi-card-bento:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+    }
+
+    .kpi-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #94a3b8;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--slate-900);
+        margin: 0;
+    }
+
+    /* Chart Bento Sections */
+    .chart-container-bento {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 2rem;
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        height: 100%;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-title {
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--slate-900);
+    }
+
+    /* Ranking Lists */
+    .rank-item {
+        border: none;
+        padding: 12px 0;
+        background: transparent;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .rank-item:last-child { border-bottom: none; }
+
+    .rank-pill {
+        font-weight: 800;
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+    }
+
+    .growth-positive { color: #10b981; font-weight: 700; }
+</style>
+
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="analytics-title mb-0">Monthly Analytics</h1>
+            <p class="text-muted small fw-bold mt-1">PERFORMANCE OVERVIEW: LAST 30 DAYS</p>
+        </div>
+        <button class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" onclick="window.print()">
+            <i class="bi bi-download me-2"></i> Export Report
+        </button>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="kpi-card-bento">
+                <div class="kpi-label">Total Orders</div>
+                <div class="kpi-value">{{ total_orders }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card-bento">
+                <div class="kpi-label">Revenue</div>
+                <div class="kpi-value">₹{{ total_revenue }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card-bento">
+                <div class="kpi-label">Avg Order</div>
+                <div class="kpi-value">₹{{ avg_order_value }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card-bento">
+                <div class="kpi-label">Retention</div>
+                <div class="kpi-value">{{ new_customers }} <small class="fs-6 text-muted">new</small></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="chart-container-bento">
+                <div class="chart-header">
+                    <span class="chart-title">Revenue & Orders Trend</span>
+                    <span class="badge bg-light text-dark rounded-pill">Daily View</span>
+                </div>
+                <canvas id="combinedChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-container-bento">
+                <div class="chart-header">
+                    <span class="chart-title">Demand Mix</span>
+                </div>
+                <canvas id="productPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="chart-container-bento">
+                <div class="chart-title mb-4">🔥 Top Products</div>
+                <div class="list-group">
+                    {% for product in top_products %}
+                    <div class="rank-item">
+                        <span class="fw-bold">{{ product.product__name }}</span>
+                        <span class="rank-pill bg-primary bg-opacity-10 text-primary">{{ product.total_qty }} Sold</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container-bento">
+                <div class="chart-title mb-4">👑 Top Spenders</div>
+                <div class="list-group">
+                    {% for user in top_users %}
+                    <div class="rank-item">
+                        <span class="fw-bold">{{ user.user__username }}</span>
+                        <span class="rank-pill bg-success bg-opacity-10 text-success">₹{{ user.total_spent }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container-bento" style="background: var(--slate-900); color: white;">
+                <div class="chart-title mb-4 text-white">📈 Monthly Growth</div>
+                <div class="mb-4">
+                    <div class="small opacity-50 text-uppercase fw-bold mb-1">Revenue Growth</div>
+                    <div class="h3 fw-800 growth-positive">+{{ revenue_growth }}%</div>
+                </div>
+                <div class="mb-4">
+                    <div class="small opacity-50 text-uppercase fw-bold mb-1">Order Volume</div>
+                    <div class="h3 fw-800 growth-positive">+{{ order_growth }}%</div>
+                </div>
+                <div class="mt-auto pt-3 border-top border-secondary">
+                    <div class="small opacity-50">Hot Item This Month:</div>
+                    <div class="fw-bold text-info">{{ highest_product }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const labels = {{ labels|safe }};
+    const orderCounts = {{ order_counts|safe }};
+    const revenueData = {{ revenue_data|safe }};
+    const pieLabels = {{ pie_labels|safe }};
+    const pieData = {{ pie_data|safe }};
+
+    // Combined Trends Chart
+    new Chart(document.getElementById('combinedChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Revenue (₹)',
+                    data: revenueData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Orders',
+                    data: orderCounts,
+                    borderColor: '#4f46e5',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { grid: { display: false } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Pie Chart
+    new Chart(document.getElementById('productPieChart'), {
+        type: 'doughnut', // Switched to doughnut for a cleaner look
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '70%',
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+</script>
+{% endblock %}

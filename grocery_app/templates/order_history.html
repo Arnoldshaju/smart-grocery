@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Smart Grocery – My Orders{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .history-header {
+        padding: 3rem 0 2rem;
+    }
+
+    .history-header h1 {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--emerald-800);
+    }
+
+    /* Bento Order Card */
+    .order-bento-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        padding: 1.5rem;
+        transition: 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .order-bento-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 30px -10px rgba(0,0,0,0.08);
+    }
+
+    .order-id-tag {
+        background: var(--bg-soft);
+        color: var(--emerald-800);
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 5px 12px;
+        border-radius: 10px;
+        text-transform: uppercase;
+    }
+
+    .store-name {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #1e293b;
+    }
+
+    .order-date {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .order-price {
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: var(--emerald-800);
+    }
+
+    .btn-view-order {
+        background: var(--mint-100);
+        color: var(--emerald-800);
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 10px 20px;
+        transition: 0.2s;
+    }
+
+    .btn-view-order:hover {
+        background: var(--emerald-800);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 5rem 1rem;
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 2px dashed #e2e8f0;
+    }
+</style>
+
+<div class="container pb-5">
+    
+    <div class="history-header">
+        <h1>Order History</h1>
+        <p class="text-muted">Review your past grocery runs and digital receipts.</p>
+    </div>
+
+    {% if orders %}
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                {% for order in orders %}
+                <div class="order-bento-card d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="d-none d-md-block">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                                📦
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mb-1">
+                                <span class="order-id-tag">Order #{{ order.id }}</span>
+                            </div>
+                            <div class="store-name">{{ order.store.name }}</div>
+                            <div class="order-date">
+                                <i class="bi bi-calendar3 me-1"></i> {{ order.created_at|date:"d M Y, h:i A" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-4 ms-auto ms-md-0">
+                        <div class="text-end">
+                            <div class="small text-muted fw-bold text-uppercase opacity-50">Total Paid</div>
+                            <div class="order-price">₹{{ order.total_amount }}</div>
+                        </div>
+                        <a href="{% url 'order_detail' order.id %}" class="btn btn-view-order">
+                            View Details
+                        </a>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="display-1 mb-3">🧾</div>
+            <h4 class="fw-800">No orders yet</h4>
+            <p class="text-muted mb-4">When you complete a checkout, your history will appear here.</p>
+            <a href="{% url 'product_search' %}" class="btn-nav-solid text-decoration-none">Start Shopping</a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

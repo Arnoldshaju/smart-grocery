@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Smart Grocery – Sign In{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --bg-soft: #f8fafc;
+        --bento-radius: 32px;
+    }
+
+    body { background-color: var(--bg-soft); font-family: 'Inter', sans-serif; }
+
+    .auth-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 20px;
+    }
+
+    .bento-auth-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 50px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.02);
+        width: 100%;
+        max-width: 480px;
+    }
+
+    .form-control-bento {
+        background: #f1f5f9;
+        border: 2px solid transparent;
+        border-radius: 16px;
+        padding: 14px 20px;
+        transition: 0.2s;
+        font-weight: 500;
+    }
+
+    .form-control-bento:focus {
+        background: white;
+        border-color: var(--emerald-800);
+        box-shadow: none;
+        outline: none;
+    }
+
+    .btn-bento-login {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: 0.3s;
+        margin-top: 10px;
+    }
+
+    .btn-bento-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(6, 95, 70, 0.2);
+        color: white;
+    }
+
+    .brand-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--emerald-800);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 24px;
+    }
+</style>
+
+<div class="auth-wrapper">
+    <div class="bento-auth-card">
+        <div class="brand-icon">🛒</div>
+        
+        <h1 class="fw-800 mb-2" style="letter-spacing: -1px;">Welcome back</h1>
+        <p class="text-muted mb-4">Sign in to your smart shopping hub.</p>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} rounded-4 py-2 small fw-bold border-0">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="small fw-800 text-uppercase opacity-50 mb-2 ms-1">Username</label>
+                <input name="username" type="text" class="form-control form-control-bento" placeholder="Enter username" required>
+            </div>
+            <div class="mb-4">
+                <label class="small fw-800 text-uppercase opacity-50 mb-2 ms-1">Password</label>
+                <input name="password" type="password" class="form-control form-control-bento" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-bento-login w-100">Sign In</button>
+        </form>
+
+        <p class="mt-4 text-center small fw-bold">
+            <span class="opacity-50">New here?</span> 
+            <a href="{% url 'register' %}" class="text-success text-decoration-none ms-1">Create Account</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

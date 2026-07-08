@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Smart Grocery – Create Offer{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --slate-900: #0f172a;
+        --bg-soft: #f8fafc;
+        --bento-radius: 28px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .page-title {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--slate-900);
+    }
+
+    .bento-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        padding: 2.5rem;
+    }
+
+    .form-label-bento {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control-bento {
+        background-color: var(--bg-soft);
+        border: 2px solid transparent;
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .form-control-bento:focus {
+        background-color: white;
+        border-color: var(--emerald-800);
+        box-shadow: none;
+    }
+
+    /* Live Preview Styling */
+    .preview-box {
+        background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%);
+        border: 2px dashed var(--emerald-800);
+        border-radius: 20px;
+        padding: 2rem;
+        position: sticky;
+        top: 100px;
+    }
+
+    .offer-badge-preview {
+        background: #ef4444;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-weight: 900;
+        font-size: 0.8rem;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .btn-save-offer {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px;
+        font-weight: 700;
+        transition: 0.3s;
+        width: 100%;
+    }
+
+    .btn-save-offer:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(6, 95, 70, 0.2);
+    }
+</style>
+
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="page-title h2 mb-0">Create New Offer</h1>
+            <p class="text-muted small fw-bold mt-1">BOOST SALES WITH LIMITED TIME DISCOUNTS</p>
+        </div>
+        <a href="{% url 'shopowner_dashboard' %}" class="btn-nav-outline text-decoration-none">
+            <i class="bi bi-arrow-left me-2"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-7">
+            <div class="bento-card">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label-bento">Select Product from Inventory</label>
+                        <select name="product" class="form-control form-control-bento" required id="id_product">
+                            <option value="" disabled selected>Choose a product...</option>
+                            {% for item in inventory_items %}
+                                <option value="{{ item.product.id }}" data-price="{{ item.price }}">
+                                    {{ item.product.name }} (Current: ₹{{ item.price }})
+                                </option>
+                            {% empty %}
+                                <option disabled>No inventory available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-bento">Offer Heading</label>
+                        <input type="text" name="title" class="form-control form-control-bento" placeholder="e.g. Weekend Flash Sale" required id="id_title">
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label-bento">Discount Percentage</label>
+                            <div class="input-group">
+                                <input type="number" name="discount_percent" step="0.01" class="form-control form-control-bento" placeholder="0.00" required id="id_discount">
+                                <span class="input-group-text bg-transparent border-0 fw-bold">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-bento">Campaign Status</label>
+                            <div class="form-control form-control-bento d-flex align-items-center bg-light">
+                                <span class="badge bg-success rounded-circle p-1 me-2"> </span>
+                                <span class="small fw-bold">Active upon start date</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-5">
+                        <div class="col-md-6">
+                            <label class="form-label-bento">Starts At</label>
+                            <input type="datetime-local" name="starts_at" class="form-control form-control-bento" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-bento">Ends At</label>
+                            <input type="datetime-local" name="ends_at" class="form-control form-control-bento" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-save-offer">
+                        <i class="bi bi-megaphone-fill me-2"></i> Launch Offer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="preview-box">
+                <div class="text-center mb-4">
+                    <span class="badge bg-white text-dark rounded-pill px-3 py-1 small fw-800 shadow-sm">Customer View Preview</span>
+                </div>
+
+                <div class="bg-white rounded-4 p-4 shadow-sm">
+                    <div class="offer-badge-preview" id="preview_discount">0% OFF</div>
+                    <h4 class="fw-800 mb-1 text-dark" id="preview_title">Offer Title Here</h4>
+                    <p class="text-muted small mb-3">Available at: {{ request.user.shop.name|default:"Your Store" }}</p>
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="h4 fw-800 text-success mb-0">₹<span id="preview_new_price">0</span></span>
+                        <span class="text-muted text-decoration-line-through small">₹<span id="preview_old_price">0</span></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 bg-white bg-opacity-50 rounded-3 small">
+                    <i class="bi bi-info-circle-fill me-2 text-emerald"></i> 
+                    This offer will be broadcasted to users following your store and added to the <strong>"Hot Deals"</strong> section.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple logic to handle the live preview
+    const titleInput = document.getElementById('id_title');
+    const discountInput = document.getElementById('id_discount');
+    const productSelect = document.getElementById('id_product');
+
+    function updatePreview() {
+        document.getElementById('preview_title').innerText = titleInput.value || "Offer Title Here";
+        document.getElementById('preview_discount').innerText = (discountInput.value || "0") + "% OFF";
+        
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const oldPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+        const newPrice = oldPrice - (oldPrice * (discount / 100));
+
+        document.getElementById('preview_old_price').innerText = oldPrice.toFixed(2);
+        document.getElementById('preview_new_price').innerText = newPrice.toFixed(2);
+    }
+
+    titleInput.addEventListener('input', updatePreview);
+    discountInput.addEventListener('input', updatePreview);
+    productSelect.addEventListener('change', updatePreview);
+</script>
+{% endblock %}

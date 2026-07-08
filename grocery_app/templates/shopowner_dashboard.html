@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block title %}Owner Dashboard | Smart Grocery{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --slate-900: #0f172a;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .dashboard-title {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--slate-900);
+    }
+
+    /* Bento Metric Cards */
+    .metric-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        padding: 1.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+
+    .metric-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--slate-900);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+    }
+
+    /* Action List */
+    .action-box {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 2rem;
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .alert-item {
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid transparent;
+        transition: 0.2s;
+    }
+
+    .alert-warning-soft {
+        background: #fffbeb;
+        border-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .alert-info-soft {
+        background: #f0f9ff;
+        border-color: #e0f2fe;
+        color: #075985;
+    }
+
+    .btn-owner {
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 8px 16px;
+        transition: 0.3s;
+    }
+
+    .btn-manage {
+        background: var(--slate-900);
+        color: white;
+        border: none;
+    }
+
+    .btn-manage:hover {
+        background: #1e293b;
+        color: white;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold mb-2">Store Manager Mode</span>
+            <h1 class="dashboard-title h2">Shop Owner Dashboard</h1>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <p class="text-muted small fw-bold mb-0">TODAY'S DATE</p>
+            <p class="fw-800 mb-0">{% now "F j, Y" %}</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="metric-card h-100">
+                <div>
+                    <div class="metric-icon bg-light text-dark">📦</div>
+                    <div class="metric-label">Inventory</div>
+                    <div class="metric-number">{{ inventory_count|default:"0" }}</div>
+                </div>
+                <a href="{% url 'inventory' %}" class="btn btn-owner btn-manage mt-4 text-decoration-none text-center">Manage Stock</a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card h-100">
+                <div>
+                    <div class="metric-icon bg-success bg-opacity-10 text-success">🏷️</div>
+                    <div class="metric-label">Active Offers</div>
+                    <div class="metric-number">{{ active_offers_count|default:"0" }}</div>
+                </div>
+                <a href="{% url 'create_offer' %}" class="btn btn-owner btn-outline-dark mt-4 text-decoration-none text-center">New Offer</a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card h-100">
+                <div>
+                    <div class="metric-icon bg-primary bg-opacity-10 text-primary">💰</div>
+                    <div class="metric-label">Today's Orders</div>
+                    <div class="metric-number">{{ todays_orders_count|default:"0" }}</div>
+                    {% if todays_revenue %}
+                        <div class="fw-bold text-success small">+₹{{ todays_revenue }} Revenue</div>
+                    {% endif %}
+                </div>
+                <a href="{% url 'shop_owner' %}" class="btn btn-owner btn-outline-dark mt-4 text-decoration-none text-center">View Orders</a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="metric-card h-100">
+                <div>
+                    <div class="metric-icon bg-info bg-opacity-10 text-info">📊</div>
+                    <div class="metric-label">Insights</div>
+                    <div class="metric-number">Monthly</div>
+                </div>
+                <a href="{% url 'monthly_reports' %}" class="btn btn-owner btn-outline-dark mt-4 text-decoration-none text-center">Open Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="action-box h-100">
+                <h5 class="fw-800 mb-4 d-flex align-items-center">
+                    <i class="bi bi-bell-fill me-2 text-warning"></i> Operational Alerts
+                </h5>
+
+                <div class="alert-item alert-warning-soft d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-800">Low Stock Alert</div>
+                        <div class="small opacity-75">{{ low_stock_count|default:"0" }} items need restocking immediately.</div>
+                    </div>
+                    <a href="{% url 'inventory' %}" class="btn btn-sm btn-warning fw-800 rounded-pill px-3">Restock</a>
+                </div>
+
+                <div class="alert-item alert-info-soft d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-800">Customer Requests</div>
+                        <div class="small opacity-75">{{ unavailable_requests_count|default:"0" }} requests for new items.</div>
+                    </div>
+                    <a href="{% url 'unavailable_requests' %}" class="btn btn-sm btn-info text-white fw-800 rounded-pill px-3">Review</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="action-box h-100" style="background: var(--slate-900); color: white;">
+                <div class="metric-icon bg-white bg-opacity-10 text-white mb-3">📍</div>
+                <h5 class="fw-800">Store Navigation</h5>
+                <p class="small opacity-75 mb-4">
+                    Update your digital store map to help customers find products faster via smart routes.
+                </p>
+                <a href="{% url 'indoor_navigation_manage' %}" class="btn btn-light w-100 fw-800 rounded-pill py-2">
+                    Manage Layout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

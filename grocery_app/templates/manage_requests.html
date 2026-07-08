@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<h2>Customer Item Requests</h2>
+
+<table class="table table-bordered">
+
+<tr>
+<th>User</th>
+<th>Item Requested</th>
+<th>Note</th>
+<th>Date</th>
+</tr>
+
+{% for r in requests %}
+<tr>
+<td>{{ r.user.username }}</td>
+<td>{{ r.item_name }}</td>
+<td>{{ r.note }}</td>
+<td>{{ r.created_at }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+{% endblock %}

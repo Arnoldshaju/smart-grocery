@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 32px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .success-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        padding: 3rem;
+        margin-top: 2rem;
+    }
+
+    .success-icon-wrapper {
+        width: 100px;
+        height: 100px;
+        background: var(--mint-100);
+        color: var(--emerald-800);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .points-badge {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 12px;
+        font-weight: 800;
+        display: inline-block;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .order-id-pill {
+        background: var(--bg-soft);
+        padding: 10px 20px;
+        border-radius: 14px;
+        font-family: monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .summary-bento {
+        background: #fdfdfd;
+        border: 1px solid #f1f5f9;
+        border-radius: 20px;
+        padding: 1.5rem;
+    }
+
+    .btn-continue {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 14px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-continue:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(6, 95, 70, 0.2);
+        color: white;
+    }
+
+    .btn-invoice {
+        color: var(--emerald-800);
+        border: 2px solid var(--mint-100);
+        background: transparent;
+        border-radius: 16px;
+        padding: 14px;
+        font-weight: 700;
+        transition: 0.2s;
+    }
+
+    .btn-invoice:hover {
+        background: var(--mint-100);
+        color: var(--emerald-800);
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 text-center">
+            
+            <div class="success-card">
+                <div class="success-icon-wrapper">
+                    <i class="bi bi-check-all"></i>
+                </div>
+
+                <h1 class="fw-800 mb-2" style="color: var(--emerald-800); letter-spacing: -1px;">Order Confirmed!</h1>
+                <p class="text-muted mb-4">Your groceries are being processed and will be ready soon.</p>
+
+                <div class="points-badge">
+                    <i class="bi bi-star-fill me-2"></i> +{{ points_earned }} Points Earned
+                </div>
+
+                <div class="mb-5">
+                    <span class="small text-muted d-block mb-2 text-uppercase fw-bold letter-spacing-1">Reference Number</span>
+                    <span class="order-id-pill">#ORD-{{ order.id }}</span>
+                </div>
+
+                <div class="summary-bento text-start mb-4">
+                    <h6 class="fw-800 mb-3 opacity-50 text-uppercase small">Purchase Summary</h6>
+                    
+                    {% for item in order.items_json %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-600">
+                            {{ item.name }} 
+                            <span class="text-muted small mx-1">×</span> 
+                            <span class="badge bg-light text-dark rounded-pill">{{ item.quantity }}</span>
+                        </div>
+                        <div class="fw-700">₹{{ item.subtotal }}</div>
+                    </div>
+                    {% endfor %}
+
+                    <hr class="my-3 opacity-10">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-800 text-dark">Total Paid</span>
+                        <span class="h5 fw-800 mb-0" style="color: var(--emerald-800);">₹{{ order.total_amount }}</span>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-3">
+                    <a href="{% url 'customer_dashboard' %}" class="btn btn-continue">
+                        Continue Shopping <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                    
+                    <a href="{% url 'download_invoice' order.id %}" class="btn btn-invoice" target="_blank">
+                        <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF Invoice
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

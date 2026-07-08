@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --emerald-700: #047857;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --text-slate: #475569;
+        --bento-radius: 24px;
+        --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    body { background-color: var(--bg-soft); font-family: 'Inter', sans-serif; }
+
+    .dashboard-container { padding: 2rem 0; }
+
+    /* Bento Card Base */
+    .mnc-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.03);
+        border-radius: var(--bento-radius);
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+    }
+
+    .mnc-card:hover { transform: translateY(-3px); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.07); }
+
+    /* Typography */
+    .mnc-header-title { color: var(--emerald-800); font-weight: 800; letter-spacing: -1px; }
+    .mnc-subtitle { color: var(--text-slate); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+
+    /* Inputs & Buttons */
+    .mnc-input {
+        border-radius: 14px;
+        border: 2px solid #f1f5f9;
+        padding: 0.75rem 1rem;
+        transition: 0.2s;
+    }
+    .mnc-input:focus { border-color: var(--emerald-800); box-shadow: none; background: #fff; }
+
+    .mnc-btn {
+        background-color: var(--emerald-800);
+        color: white;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 14px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+    .mnc-btn:hover { background-color: var(--emerald-700); transform: scale(1.02); color: white; }
+
+    /* Metrics */
+    .metric-value { font-size: 2.2rem; font-weight: 800; color: var(--emerald-800); letter-spacing: -1px; }
+
+    .status-badge {
+        padding: 0.6rem 1.2rem;
+        border-radius: 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .status-success { background: var(--mint-100); color: var(--emerald-800); }
+    .status-danger { background: #fee2e2; color: #b91c1c; }
+
+    /* Table Styling */
+    .mnc-table thead th {
+        background: #f8fafc;
+        border: none;
+        color: var(--text-slate);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        padding: 1.2rem;
+    }
+    .mnc-table td { padding: 1.2rem; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+    
+    .item-icon {
+        width: 40px; height: 40px;
+        background: var(--bg-soft);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--emerald-800);
+    }
+</style>
+
+<div class="container dashboard-container">
+
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="mnc-header-title mb-1">Budget Tracker</h1>
+            <p class="mnc-subtitle mb-0">Analysis for {{ month }} / {{ year }}</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-white text-dark border-0 shadow-sm p-2 px-3 rounded-pill fw-bold">
+                <i class="fa-solid fa-circle-dot text-success me-1"></i> Tracking Active
+            </span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4">
+            
+            <div class="mnc-card p-4 mb-4">
+                <h6 class="mnc-subtitle mb-3">Settings</h6>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="small fw-800 text-muted mb-2 ms-1">Monthly Limit</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0 fw-bold">₹</span>
+                            <input type="number" step="0.01" name="budget" required class="form-control mnc-input border-0 bg-light" placeholder="0.00">
+                        </div>
+                    </div>
+                    <button type="submit" class="mnc-btn w-100">Update Limit</button>
+                </form>
+            </div>
+
+            <div class="mnc-card p-4">
+                <h6 class="mnc-subtitle mb-4">Spent this month</h6>
+                <h3 class="metric-value mb-4">₹{{ total_spent }}</h3>
+
+                {% if budget %}
+                    <div class="d-flex justify-content-between mb-2 small fw-bold">
+                        <span class="text-muted">Target: ₹{{ budget.budget_amount }}</span>
+                        <span class="text-muted">Left: ₹{{ remaining }}</span>
+                    </div>
+                    
+                    <div class="progress mb-4" style="height: 10px; border-radius: 10px; background: #f1f5f9;">
+                        {% widthratio total_spent budget.budget_amount 100 as percentage %}
+                        <div class="progress-bar {% if overspent %}bg-danger{% else %}bg-success{% endif %}" 
+                             style="width: {{ percentage }}%; border-radius: 10px;"></div>
+                    </div>
+
+                    {% if overspent %}
+                        <div class="status-badge status-danger w-100 justify-content-center">
+                            <i class="fa-solid fa-circle-exclamation"></i> Over Budget
+                        </div>
+                    {% else %}
+                        <div class="status-badge status-success w-100 justify-content-center">
+                            <i class="fa-solid fa-check-circle"></i> On Track
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center p-3 rounded-4 bg-light">
+                        <small class="text-muted">Set a budget to see progress</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="mnc-card h-100 overflow-hidden">
+                <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mnc-subtitle mb-0">Recent Transactions</h6>
+                    <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold text-muted">
+                        <i class="fa-solid fa-download me-1"></i> Export
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    {% if products %}
+                    <table class="table mnc-table mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Item</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Unit</th>
+                                <th class="text-end pe-4">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in products %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="item-icon">
+                                            <i class="fa-solid fa-basket-shopping"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold d-block">{{ item.name }}</span>
+                                            <small class="text-muted">ID: #{{ forloop.counter }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-light text-dark px-3">{{ item.quantity }}</span>
+                                </td>
+                                <td class="text-end text-muted">₹{{ item.price }}</td>
+                                <td class="text-end pe-4 fw-bold text-dark">₹{{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="p-5 text-center">
+                        <div class="display-1 text-muted opacity-10 mb-3">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <h6 class="fw-bold text-muted">No purchases yet</h6>
+                        <p class="small text-muted">Items from your orders will appear here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

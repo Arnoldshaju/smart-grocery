@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}Smart Grocery – Inventory{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --slate-900: #0f172a;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .inventory-title {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--slate-900);
+    }
+
+    .bento-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-label-bento {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control-bento, .form-select-bento {
+        background-color: var(--bg-soft);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .form-control-bento:focus {
+        background-color: white;
+        border-color: var(--emerald-800);
+        box-shadow: none;
+    }
+
+    .btn-action {
+        background: var(--slate-900);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-action:hover {
+        background: var(--emerald-800);
+        transform: translateY(-2px);
+    }
+
+    /* Table Styling */
+    .table-bento {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .table-bento thead th {
+        border: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        padding: 0 1.5rem;
+    }
+
+    .table-bento tbody tr {
+        background: white;
+        transition: 0.2s;
+    }
+
+    .table-bento tbody td {
+        padding: 1.25rem 1.5rem;
+        border: none;
+        vertical-align: middle;
+        font-weight: 600;
+    }
+
+    .table-bento tbody tr td:first-child { border-radius: 16px 0 0 16px; }
+    .table-bento tbody tr td:last-child { border-radius: 0 16px 16px 0; }
+
+    .table-bento tbody tr:hover {
+        transform: scale(1.005);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    .status-low { background: #fffbeb; color: #92400e; }
+    .status-ok { background: #f0fdf4; color: #166534; }
+</style>
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="inventory-title h2 mb-0">Inventory Management</h1>
+            <p class="text-muted small fw-bold mt-1">UPDATE PRODUCTS AND STOCK LEVELS</p>
+        </div>
+        <a href="{% url 'shopowner_dashboard' %}" class="btn-nav-outline text-decoration-none">
+            <i class="bi bi-arrow-left me-2"></i> Dashboard
+        </a>
+    </div>
+
+    {% if store %}
+    <div class="bento-card">
+        <h5 class="fw-800 mb-4 d-flex align-items-center">
+            {% if edit_item %}
+                <i class="bi bi-pencil-square me-2 text-warning"></i> Edit Item
+            {% else %}
+                <i class="bi bi-plus-circle-fill me-2 text-primary"></i> Add New Stock
+            {% endif %}
+        </h5>
+
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            {% if edit_item %}<input type="hidden" name="item_id" value="{{ edit_item.id }}">{% endif %}
+
+            <div class="col-md-4">
+                <label class="form-label-bento">Select Product</label>
+                <select name="product" class="form-select form-select-bento" required>
+                    <option value="">Choose product...</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}" {% if edit_item and edit_item.product.id == product.id %}selected{% endif %}>
+                            {{ product.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label-bento">Quantity</label>
+                <input type="number" name="quantity" class="form-control form-control-bento" value="{{ edit_item.quantity|default:'' }}" required>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label-bento">Price (₹)</label>
+                <input type="number" step="0.01" name="price" class="form-control form-control-bento" value="{{ edit_item.price|default:'' }}" required>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label-bento">Expiry Date</label>
+                <input type="date" name="expiry_date" class="form-control form-control-bento" value="{{ edit_item.expiry_date|date:'Y-m-d' }}">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn-action w-100">
+                    {% if edit_item %}Update Stock{% else %}Add to Stock{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center px-3 mb-3">
+            <h5 class="fw-800 mb-0">Current Inventory</h5>
+            <span class="text-muted small fw-bold">{{ inventory_items|length }} Products Listed</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bento">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock Level</th>
+                        <th>Price</th>
+                        <th>Expiry</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory_items %}
+                    <tr>
+                        <td>
+                            <div class="fw-800 text-dark">{{ item.product.name }}</div>
+                            <div class="text-muted small">ID: #{{ item.id }}</div>
+                        </td>
+                        <td>
+                            <span class="status-pill {% if item.quantity < 10 %}status-low{% else %}status-ok{% endif %}">
+                                {{ item.quantity }} in stock
+                            </span>
+                        </td>
+                        <td class="text-dark fw-800">₹{{ item.price }}</td>
+                        <td>
+                            {% if item.expiry_date %}
+                                <span class="small fw-600">{{ item.expiry_date|date:"d M Y" }}</span>
+                            {% else %}
+                                <span class="text-muted opacity-50">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'inventory' %}?edit={{ item.id }}" class="btn btn-sm btn-light rounded-pill px-3 fw-bold me-1">Edit</a>
+                            <a href="{% url 'delete_inventory_item' item.id %}" 
+                               class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold"
+                               onclick="return confirm('Delete this item?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted fw-bold">
+                            📦 No inventory items found. Add your first item above!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

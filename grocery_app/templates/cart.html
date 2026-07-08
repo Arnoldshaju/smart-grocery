@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 28px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .cart-header {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--emerald-800);
+        margin-bottom: 2rem;
+    }
+
+    /* Bento Item Card */
+    .cart-item-card {
+        background: white;
+        border-radius: 24px;
+        border: 1px solid rgba(0,0,0,0.02);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+        transition: 0.3s;
+    }
+
+    .cart-item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.06);
+    }
+
+    .unit-tag {
+        background: var(--bg-soft);
+        padding: 4px 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .subtotal-text {
+        color: var(--emerald-800);
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    /* Summary Card (Sticky) */
+    .summary-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: none;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 100px; /* Aligns with sticky navbar */
+    }
+
+    .btn-checkout {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-checkout:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(6, 95, 70, 0.2);
+        color: white;
+    }
+
+    .btn-remove {
+        color: #ef4444;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-decoration: none;
+        background: #fef2f2;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 10px;
+        transition: 0.2s;
+    }
+
+    .btn-remove:hover {
+        background: #fee2e2;
+    }
+
+    .empty-cart-bento {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 60px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        max-width: 600px;
+        margin: 40px auto;
+    }
+</style>
+
+<div class="container py-5">
+    <h2 class="cart-header">Your Cart</h2>
+
+    {% if line_items %}
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            {% for item in line_items %}
+            <div class="cart-item-card mb-3">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-light rounded-4 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            🛒
+                        </div>
+                        <div>
+                            <h5 class="mb-1 fw-800 text-dark">{{ item.product.name }}</h5>
+                            <div class="unit-tag">
+                                ₹{{ item.unit_price }} <span class="opacity-50 mx-1">×</span> {{ item.quantity }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="subtotal-text mb-2">₹{{ item.subtotal }}</div>
+                        <form method="post" action="{% url 'remove_from_cart' item.product.id %}">
+                            {% csrf_token %}
+                            <button class="btn-remove">
+                                <i class="bi bi-trash3 me-1"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="summary-card">
+                <div class="card-body p-4">
+                    <h5 class="fw-800 mb-4" style="letter-spacing: -0.5px;">Summary</h5>
+
+                    <div class="d-flex justify-content-between mb-3 text-muted fw-500">
+                        <span>Items ({{ line_items|length }})</span>
+                        <span>₹{{ cart_total }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3 text-muted fw-500">
+                        <span>Delivery</span>
+                        <span class="text-success fw-bold">Free</span>
+                    </div>
+
+                    <hr class="opacity-10 my-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="h6 fw-800 mb-0">Total</span>
+                        <span class="h4 fw-800 mb-0" style="color: var(--emerald-800);">₹{{ cart_total }}</span>
+                    </div>
+
+                    <a href="{% url 'checkout' %}" class="btn btn-checkout w-100">
+                        Proceed to Checkout <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+
+                    <div class="mt-4 text-center">
+                        <p class="small text-muted mb-0">
+                            <i class="bi bi-shield-check me-1"></i> Secure checkout powered by Smart Grocery
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% else %}
+    <div class="empty-cart-bento text-center">
+        <div class="display-1 mb-4">🛍️</div>
+        <h3 class="fw-800 mb-2">Your cart is feeling lonely</h3>
+        <p class="text-muted mb-4">Looks like you haven't added anything to your cart yet.</p>
+        <a href="{% url 'customer_dashboard' %}" class="btn-checkout text-decoration-none px-5">
+            Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

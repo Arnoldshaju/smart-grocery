@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Smart Grocery – Settings{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .settings-header h2 {
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--emerald-800);
+    }
+
+    .bento-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        padding: 2rem;
+        height: 100%;
+    }
+
+    .card-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: #94a3b8;
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+
+    /* Form Styling */
+    .form-control-bento {
+        background-color: var(--bg-soft);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .form-control-bento:focus {
+        background-color: white;
+        border-color: var(--emerald-800);
+        box-shadow: none;
+        outline: none;
+    }
+
+    .reward-highlight {
+        background: linear-gradient(135deg, var(--emerald-800), #047857);
+        color: white;
+        padding: 20px;
+        border-radius: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Checkbox Styling */
+    .form-check-input:checked {
+        background-color: var(--emerald-800);
+        border-color: var(--emerald-800);
+    }
+
+    .pref-item {
+        padding: 12px;
+        border-radius: 12px;
+        transition: 0.2s;
+    }
+
+    .pref-item:hover {
+        background: var(--bg-soft);
+    }
+
+    .btn-save {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 30px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-save:hover {
+        background: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px rgba(6, 95, 70, 0.2);
+    }
+</style>
+
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5 settings-header">
+        <div>
+            <h2>Settings</h2>
+            <p class="text-muted mb-0">Manage your profile and app preferences.</p>
+        </div>
+        <a href="{% url 'customer_dashboard' %}" class="btn-nav-outline text-decoration-none">
+            <i class="bi bi-house-door me-2"></i> Dashboard
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success border-0 rounded-4 shadow-sm mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row g-4">
+            
+            <div class="col-lg-7">
+                <div class="bento-card">
+                    <span class="card-label">Profile Information</span>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small fw-bold mb-2">First Name</label>
+                            <input type="text" name="first_name" class="form-control form-control-bento" value="{{ request.user.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold mb-2">Last Name</label>
+                            <input type="text" name="last_name" class="form-control form-control-bento" value="{{ request.user.last_name }}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="small fw-bold mb-2">Email Address</label>
+                            <input type="email" name="email" class="form-control form-control-bento" value="{{ request.user.email }}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="small fw-bold mb-2">Phone Number</label>
+                            <input type="text" name="phone" class="form-control form-control-bento" value="{{ request.user.profile.phone }}">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="reward-highlight">
+                            <div>
+                                <span class="d-block small opacity-75 fw-bold text-uppercase">Total Rewards</span>
+                                <h4 class="mb-0 fw-800">{{ request.user.profile.reward_points }} Points</h4>
+                            </div>
+                            <div class="fs-2">🎁</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="d-flex flex-column gap-4 h-100">
+                    
+                    <div class="bento-card">
+                        <span class="card-label">Notifications</span>
+                        <div class="pref-item form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="expiry_alerts" {% if request.user.profile.expiry_alerts %}checked{% endif %}>
+                            <label class="form-check-label ms-2 fw-bold small">Expiry Alerts</label>
+                        </div>
+                        <div class="pref-item form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="refill_reminders" {% if request.user.profile.refill_reminders %}checked{% endif %}>
+                            <label class="form-check-label ms-2 fw-bold small">Refill Reminders</label>
+                        </div>
+                        <div class="pref-item form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="offers_notifications" {% if request.user.profile.offers_notifications %}checked{% endif %}>
+                            <label class="form-check-label ms-2 fw-bold small">Personalized Offers</label>
+                        </div>
+                    </div>
+
+                    <div class="bento-card">
+                        <span class="card-label">Privacy & Security</span>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'password_change' %}" class="btn-nav-outline text-decoration-none py-2 text-center">
+                                <i class="bi bi-key me-2"></i> Update Password
+                            </a>
+                            <form method="post" action="{% url 'logout' %}" class="d-grid">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-nav-danger py-2">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn-save">
+                Save All Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

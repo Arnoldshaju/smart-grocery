@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Smart Grocery – Receipt #{{ order.id }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 28px;
+    }
+
+    body { background-color: var(--bg-soft); }
+
+    .receipt-container {
+        max-width: 900px;
+        margin: 40px auto;
+    }
+
+    .bento-card {
+        background: white;
+        border-radius: var(--bento-radius);
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .receipt-header {
+        background: var(--emerald-800);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .summary-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 1px;
+        opacity: 0.6;
+        margin-bottom: 4px;
+    }
+
+    .summary-value {
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .item-row {
+        padding: 16px 24px;
+        border-bottom: 1px dashed #e2e8f0;
+        transition: 0.2s;
+    }
+
+    .item-row:last-child { border-bottom: none; }
+    .item-row:hover { background: var(--bg-soft); }
+
+    .qty-pill {
+        background: var(--mint-100);
+        color: var(--emerald-800);
+        font-weight: 800;
+        font-size: 0.7rem;
+        padding: 2px 10px;
+        border-radius: 20px;
+        margin-left: 8px;
+    }
+
+    .total-section {
+        background: #f1f5f9;
+        padding: 24px;
+        border-radius: 20px;
+        margin: 20px;
+    }
+
+    .btn-back {
+        color: var(--emerald-800);
+        text-decoration: none;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        transition: 0.2s;
+    }
+
+    .btn-back:hover { transform: translateX(-5px); }
+</style>
+
+<div class="container receipt-container">
+    
+    <a href="{% url 'order_history' %}" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Back to History
+    </a>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="bento-card p-4 h-100">
+                <div class="text-center mb-4">
+                    <div class="display-4">🧾</div>
+                    <h5 class="fw-800 mt-2">Order Summary</h5>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="summary-label">Reference</div>
+                    <div class="summary-value">#ORD-{{ order.id }}</div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="summary-label">Date & Time</div>
+                    <div class="summary-value small">{{ order.created_at|date:"d M Y" }}<br>{{ order.created_at|date:"h:i A" }}</div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="summary-label">Store</div>
+                    <div class="summary-value">{{ order.store.name }}</div>
+                </div>
+
+                <div class="mt-auto pt-3">
+                    <button class="btn btn-outline-secondary w-100 rounded-pill btn-sm fw-bold" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Receipt
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="bento-card">
+                <div class="receipt-header">
+                    <h2 class="mb-0 fw-800">₹{{ order.total_amount }}</h2>
+                    <p class="small opacity-75 mb-0">Total Amount Paid</p>
+                </div>
+
+                <div class="p-2">
+                    {% for item in items %}
+                    <div class="item-row d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold d-block">{{ item.name }}</span>
+                            <span class="text-muted small">Unit Price: ₹{{ item.price }}</span>
+                            <span class="qty-pill">x{{ item.quantity }}</span>
+                        </div>
+                        <div class="fw-800 text-dark">
+                            ₹{{ item.price }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="total-section d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-800 text-uppercase small opacity-50 d-block">Final Settlement</span>
+                        <span class="text-muted small">Paid via Smart Wallet</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="h4 fw-800 mb-0" style="color: var(--emerald-800);">₹{{ order.total_amount }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

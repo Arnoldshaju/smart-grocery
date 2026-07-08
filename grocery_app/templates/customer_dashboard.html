@@ -1,0 +1,1003 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
+  rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #f9f7f4;
+    --ink: #1a1814;
+    --ink-faint: #6b6762;
+    --ink-lighter: #9c9894;
+    --rule: #e2deda;
+    --card-bg: #ffffff;
+    --badge-low: #c8860a;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .75rem;
+    align-items: center;
+    padding: 1.5rem 0 1.25rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2rem;
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    border: 1px solid var(--rule);
+    background: var(--card-bg);
+    border-radius: 2px;
+    padding: .5rem 2.5rem .5rem .85rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--ink);
+  }
+
+  .search-wrap input::placeholder {
+    color: var(--ink-lighter);
+  }
+
+  .search-wrap .s-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border: none;
+    background: none;
+    padding: 0 .7rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+
+  .search-wrap .s-btn:hover {
+    color: var(--ink);
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: var(--card-bg);
+    color: var(--ink-faint);
+    text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+
+  .icon-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    display: flex;
+    gap: .4rem;
+    overflow-x: auto;
+    padding-bottom: .2rem;
+    margin-bottom: 1.25rem;
+    scrollbar-width: none;
+    contain: content;
+  }
+
+  .filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-pill {
+    flex-shrink: 0;
+    border: 1px solid var(--rule);
+    background: transparent;
+    border-radius: 2px;
+    padding: .28rem .75rem;
+    font-size: .72rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+
+  .filter-pill:hover,
+  .filter-pill.active {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .toolbar-label {
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ink-lighter);
+  }
+
+  .toolbar select {
+    border: 1px solid var(--rule);
+    background: transparent;
+    padding: .28rem .6rem;
+    font-size: .75rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .toolbar select:focus {
+    border-color: var(--ink);
+  }
+
+  #resultCount {
+    margin-left: auto;
+    font-size: .72rem;
+    color: var(--ink-lighter);
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.55rem;
+    font-weight: 400;
+    letter-spacing: -.01em;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Fresh Produce featured strip ── */
+  .produce-section {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .65rem 1rem;
+    background: linear-gradient(90deg, #f0faf0, #fafaf5);
+    border-bottom: 1px solid #d4e8d0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .produce-section .ps-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .produce-section .ps-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #2c5f2e;
+    letter-spacing: .01em;
+  }
+
+  .produce-section .ps-count {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #5a8f5c;
+    margin-left: auto;
+  }
+
+  /* divider between produce and rest */
+  .cat-divider {
+    grid-column: 1 / -1;
+    padding: .5rem 1rem .4rem;
+    background: var(--cream);
+    border-top: 2px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .cat-divider span {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ink-lighter);
+  }
+
+  /* Highlight produce cards subtly */
+  .product-cell.is-produce {
+    background: #fdfff5;
+  }
+
+  .product-cell.is-produce .product-category {
+    color: #5a8f5c;
+  }
+
+  /* ── Product grid ── */
+  #productGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    contain: layout style;
+  }
+
+  .product-cell {
+    background: var(--card-bg);
+    padding: 1.2rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    transition: background .12s;
+  }
+
+  .product-cell:hover {
+    background: #fdfcfb;
+  }
+
+  .thumb-box {
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 1px;
+    margin-bottom: .35rem;
+    background: linear-gradient(135deg, #ede9e4, #d6d0ca);
+  }
+
+  .thumb-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .product-category {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-lighter);
+  }
+
+  .product-name {
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .product-price {
+    font-size: .85rem;
+    color: var(--ink);
+    margin-top: auto;
+  }
+
+  .product-price sup {
+    font-size: .65rem;
+    color: var(--ink-faint);
+  }
+
+  .low-stock-tag {
+    display: inline-block;
+    font-size: .63rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--badge-low);
+    font-weight: 500;
+    border: 1px solid var(--badge-low);
+    border-radius: 1px;
+    padding: .08rem .35rem;
+    width: fit-content;
+  }
+
+  /* Qty row */
+  .qty-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--rule);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: .6rem;
+  }
+
+  .qty-btn {
+    background: none;
+    border: none;
+    padding: .3rem .55rem;
+    font-size: 1rem;
+    color: var(--ink-faint);
+    cursor: pointer;
+    line-height: 1;
+    transition: background .1s;
+  }
+
+  .qty-btn[data-dir="-1"] {
+    border-right: 1px solid var(--rule);
+  }
+
+  .qty-btn[data-dir="1"] {
+    border-left: 1px solid var(--rule);
+  }
+
+  .qty-btn:hover {
+    background: var(--rule);
+    color: var(--ink);
+  }
+
+  .qty-val {
+    flex: 1;
+    text-align: center;
+    font-size: .78rem;
+    color: var(--ink);
+    padding: .3rem 0;
+    user-select: none;
+  }
+
+  .btn-add {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--ink);
+    border-top: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .72rem;
+    font-weight: 400;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .38rem;
+    cursor: pointer;
+    border-radius: 0 0 1px 1px;
+    transition: background .12s, color .12s;
+  }
+
+  .btn-add:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .btn-add:disabled {
+    opacity: .5;
+    cursor: default;
+  }
+
+  .btn-add.success {
+    background: #2c5f2e;
+    color: #fff;
+    border-color: #2c5f2e;
+  }
+
+  .btn-add.error {
+    background: #8b1a1a;
+    color: #fff;
+    border-color: #8b1a1a;
+  }
+
+  .btn-out {
+    display: block;
+    width: 100%;
+    margin-top: .6rem;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink-lighter);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .72rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .38rem;
+    cursor: not-allowed;
+    border-radius: 1px;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.1s infinite;
+    border-radius: 1px;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0
+    }
+
+    100% {
+      background-position: -200% 0
+    }
+  }
+
+  .skeleton-cell {
+    background: var(--card-bg);
+    padding: 1.2rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  .sk-thumb {
+    aspect-ratio: 1;
+  }
+
+  .sk-line {
+    height: .65rem;
+  }
+
+  .sk-line.w60 {
+    width: 60%;
+  }
+
+  .sk-line.w80 {
+    width: 80%;
+  }
+
+  .sk-line.w40 {
+    width: 40%;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    padding: 3rem;
+    text-align: center;
+    color: var(--ink-lighter);
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    background: var(--card-bg);
+  }
+
+  #scrollSentinel {
+    height: 1px;
+  }
+
+  #loadingMore {
+    display: none;
+    text-align: center;
+    padding: 1.5rem 0;
+    color: var(--ink-lighter);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  #loadingMore.visible {
+    display: block;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    padding-left: 2.25rem;
+    border-left: 1px solid var(--rule);
+  }
+
+  @media (max-width: 991.98px) {
+    .sidebar {
+      padding-left: 0;
+      border-left: none;
+      border-top: 1px solid var(--rule);
+      padding-top: 2rem;
+      margin-top: 2rem;
+    }
+  }
+
+  .grocery-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+  }
+
+  .grocery-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: .875rem;
+  }
+
+  .grocery-list li:first-child {
+    border-top: 1px solid var(--rule);
+  }
+
+  .grocery-qty {
+    font-size: .75rem;
+    color: var(--ink-faint);
+  }
+
+  .grocery-empty {
+    font-size: .85rem;
+    color: var(--ink-lighter);
+    font-style: italic;
+    padding: .9rem 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 1.25rem;
+  }
+
+  .sidebar-action {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .75rem;
+    font-weight: 400;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .6rem 1rem;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 1px;
+    margin-bottom: .45rem;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+
+  .sidebar-action:hover {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  .sidebar-action.primary {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  .sidebar-action.primary:hover {
+    background: #333;
+  }
+
+  hr.s-divider {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 1.5rem 0 1.25rem;
+  }
+
+  /* Cart badge */
+  .cart-badge {
+    position: relative;
+  }
+
+  .cart-badge .badge-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--ink);
+    color: var(--cream);
+    font-size: .55rem;
+    font-weight: 500;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity .15s, transform .15s;
+  }
+
+  .cart-badge .badge-count.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+</style>
+
+<div class="container py-0">
+
+  <div class="topbar">
+    <div class="search-wrap">
+      <input id="searchInput" type="search" placeholder="Search products" autocomplete="off" spellcheck="false">
+      <button class="s-btn" type="button" aria-label="Search"><i class="bi bi-search"></i></button>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'ocr_scanner' %}" class="icon-btn" title="Scan"><i class="bi bi-camera"></i></a>
+      <a href="{% url 'customer_profile' %}" class="icon-btn" title="Profile"><i class="bi bi-person"></i></a>
+      <a href="{% url 'checkout' %}" class="icon-btn cart-badge" title="Cart" id="cartBtn">
+        <i class="bi bi-bag"></i>
+        <span class="badge-count" id="cartBadge"></span>
+      </a>
+      <a href="{% url 'settings' %}" class="icon-btn" title="Settings"><i class="bi bi-sliders"></i></a>
+    </div>
+  </div>
+
+  <div class="row g-0">
+    <div class="col-lg-8 pe-lg-4">
+
+      <h1 class="section-label">Products</h1>
+
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-pill active" data-cat="">All</button>
+      </div>
+
+      <div class="toolbar">
+        <span class="toolbar-label">Sort</span>
+        <select id="sortSelect">
+          <option value="name_asc">Name A–Z</option>
+          <option value="name_desc">Name Z–A</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+        </select>
+        <span id="resultCount"></span>
+      </div>
+
+      <div id="productGrid"></div>
+      <div id="scrollSentinel"></div>
+      <div id="loadingMore">Loading&hellip;</div>
+
+    </div>
+
+    <div class="col-lg-4">
+      <div class="sidebar">
+        <a href="{% url 'checkout' %}" class="sidebar-action primary">Proceed to Checkout</a>
+        <hr class="s-divider">
+        <h2 class="section-label" style="font-size:1.15rem;">Store Services</h2>
+        <a href="{% url 'indoor_nav' %}" class="sidebar-action">Indoor Navigation</a>
+        <a href="{% url 'request_item' %}" class="sidebar-action">Request an Item</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Embed CSRF once; JS reads it from here, not from cookies (works with CSRF_COOKIE_HTTPONLY=True) #}
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+<script>
+  (function () {
+    'use strict';
+
+    /* ── CSRF ─────────────────────────────── */
+    const CSRF = document.getElementById('csrfToken').value;
+
+    /* ── State ────────────────────────────── */
+    const S = { page: 1, hasNext: true, loading: false, category: '', sort: 'name_asc', query: '' };
+
+    /* ── DOM ──────────────────────────────── */
+    const grid = document.getElementById('productGrid');
+    const sentinel = document.getElementById('scrollSentinel');
+    const loadingEl = document.getElementById('loadingMore');
+    const filterBar = document.getElementById('filterBar');
+    const sortSel = document.getElementById('sortSelect');
+    const searchInput = document.getElementById('searchInput');
+    const countEl = document.getElementById('resultCount');
+    const groceryCont = document.getElementById('groceryContainer');
+    const cartBadge = document.getElementById('cartBadge');
+
+    /* ── Escape helper ────────────────────── */
+    const ESC_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ESC_MAP[c]);
+
+    /* ── Skeleton ─────────────────────────── */
+    const SK = `<div class="skeleton-cell"><div class="skeleton sk-thumb"></div><div class="skeleton sk-line w60"></div><div class="skeleton sk-line w80"></div><div class="skeleton sk-line w40"></div></div>`;
+    function showSkeletons() { grid.innerHTML = SK.repeat(12); }
+
+    function buildCard(p) {
+      const el = document.createElement('div');
+      el.className = 'product-cell';
+
+      const thumb = p.image_url
+        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
+        : '';
+
+      const badge = p.is_low_stock
+        ? `<span class="low-stock-tag">Only ${+p.stock_quantity} left</span>` : '';
+
+      const expiry = `
+    <p class="small text-muted" style="margin:0;">
+      Expiry:
+      <span class="text-danger">
+        ${p.expiry_date ? esc(p.expiry_date) : "N/A"}
+      </span>
+    </p>
+  `;
+
+      const action = p.is_out_of_stock
+        ? `<button class="btn-out" disabled>Unavailable</button>`
+        : `<div class="qty-row" data-pid="${+p.id}">
+         <button class="qty-btn" type="button" data-dir="-1">&#8722;</button>
+         <span class="qty-val">1</span>
+         <button class="qty-btn" type="button" data-dir="1">&#43;</button>
+       </div>
+       <button class="btn-add" type="button" data-pid="${+p.id}">Add to bag</button>`;
+
+      el.innerHTML = `
+    <div class="thumb-box">${thumb}</div>
+    <span class="product-category">${esc(p.category)}</span>
+    <span class="product-name">${esc(p.name)}</span>
+    ${badge}
+    ${expiry}
+    <div class="product-price"><sup>&#8377;</sup>${esc(p.mrp)}</div>
+    ${action}`;
+
+      return el;
+    }
+
+    /* ── Fetch products ───────────────────── */
+    async function fetchProducts(fresh = false) {
+      if (S.loading || (!S.hasNext && !fresh)) return;
+      S.loading = true;
+      loadingEl.classList.add('visible');
+
+      if (fresh) { S.page = 1; S.hasNext = true; showSkeletons(); }
+
+      const params = new URLSearchParams({ page: S.page, sort: S.sort });
+      if (S.category) params.set('category', S.category);
+      if (S.query) params.set('q', S.query);
+
+      try {
+        const res = await fetch(`/api/products/?${params}`);
+        if (!res.ok) throw new Error(res.status);
+        const data = await res.json();
+
+        S.hasNext = data.has_next;
+        countEl.textContent = Number(data.total).toLocaleString('en-IN') + ' items';
+
+        if (fresh) grid.innerHTML = '';
+
+        if (!data.products.length && fresh) {
+          grid.innerHTML = '<div class="empty-state">No products found.</div>';
+        } else {
+          // ── Split into produce vs regular — no extra API call ──
+          const produceItems = data.products.filter(p => isProduce(p.category));
+          const regularItems = data.products.filter(p => !isProduce(p.category));
+          const isShowingAll = !S.category && !S.query;  // only group when browsing 'All'
+
+          const frag = document.createDocumentFragment();
+
+          if (isShowingAll && produceItems.length && fresh) {
+            // Fresh produce header (sticky inside grid)
+            const hdr = document.createElement('div');
+            hdr.className = 'produce-section';
+            hdr.innerHTML = `<span class="ps-icon">🥦</span>
+            <span class="ps-label">Fresh Fruits &amp; Vegetables</span>
+            <span class="ps-count">${produceItems.length} item${produceItems.length > 1 ? 's' : ''}</span>`;
+            frag.appendChild(hdr);
+
+            // Produce cards
+            for (const p of produceItems) {
+              const card = buildCard(p);
+              card.classList.add('is-produce');
+              frag.appendChild(card);
+            }
+
+            // Divider before remaining products
+            if (regularItems.length) {
+              const div = document.createElement('div');
+              div.className = 'cat-divider';
+              div.innerHTML = `<span>All other products</span>`;
+              frag.appendChild(div);
+            }
+
+            // Regular cards
+            for (const p of regularItems) frag.appendChild(buildCard(p));
+
+          } else if (isShowingAll && produceItems.length && !fresh) {
+            // Infinite scroll append — no produce header repeated, just append all
+            for (const p of data.products) frag.appendChild(buildCard(p));
+          } else {
+            // Filtered view (category selected or search active) — no grouping needed
+            for (const p of data.products) frag.appendChild(buildCard(p));
+          }
+
+          grid.appendChild(frag);
+          if (data.has_next) S.page++;
+        }
+      } catch {
+        if (fresh) grid.innerHTML = '<div class="empty-state">Failed to load. Please refresh.</div>';
+      } finally {
+        S.loading = false;
+        loadingEl.classList.remove('visible');
+      }
+    }
+
+    /* ── Produce category keywords ───────── */
+    // Any category whose name contains these words is treated as fresh produce
+    const PRODUCE_KEYWORDS = ['fruit', 'vegetable', 'veggie', 'veg', 'fresh', 'greens', 'salad', 'herbs', 'organic'];
+    function isProduce(category) {
+      if (!category) return false;
+      const lc = category.toLowerCase();
+      return PRODUCE_KEYWORDS.some(k => lc.includes(k));
+    }
+
+    /* ── Fetch categories ─────────────────── */
+    async function fetchCategories() {
+      try {
+        // API returns a plain array of {id, name} objects
+        const data = await (await fetch('/api/products/categories/')).json();
+        const frag = document.createDocumentFragment();
+        for (const cat of data) {
+          const b = document.createElement('button');
+          b.className = 'filter-pill';
+          b.dataset.cat = cat.name;   // name string, e.g. "Dairy"
+          b.textContent = cat.name;
+          // highlight produce-related pills with a leaf emoji
+          if (isProduce(cat.name)) b.textContent = '🌿 ' + cat.name;
+          frag.appendChild(b);
+        }
+        filterBar.appendChild(frag);
+      } catch { }
+    }
+
+    /* ── Fetch grocery list ───────────────── */
+    async function fetchGrocery() {
+      try {
+        const data = await (await fetch('/api/grocery-list/')).json();
+        if (!data.items.length) {
+          groceryCont.innerHTML = '<p class="grocery-empty">Your running list is empty.</p>';
+          return;
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'grocery-list';
+        for (const it of data.items) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${esc(it.name)}</span><span class="grocery-qty">&times;&thinsp;${+it.quantity}</span>`;
+          ul.appendChild(li);
+        }
+        groceryCont.appendChild(ul);
+      } catch {
+        groceryCont.innerHTML = '<p class="grocery-empty">Could not load list.</p>';
+      }
+    }
+
+    /* ── Update cart badge ────────────────── */
+    function updateBadge(count) {
+      if (!count) return;
+      cartBadge.textContent = count > 99 ? '99+' : count;
+      cartBadge.classList.add('visible');
+    }
+
+    /* ── Infinite scroll ──────────────────── */
+    new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) fetchProducts(); },
+      { rootMargin: '300px' }
+    ).observe(sentinel);
+
+    /* ── Delegated events on grid ─────────── */
+    grid.addEventListener('click', async e => {
+      /* Prevent ANY click inside the grid from bubbling to parent links */
+      e.stopPropagation();
+
+      /* Ignore clicks on section headers / dividers (non-interactive) */
+      if (e.target.closest('.produce-section') || e.target.closest('.cat-divider')) return;
+
+      /* qty +/- */
+      const qBtn = e.target.closest('.qty-btn');
+      if (qBtn) {
+        e.preventDefault();
+        const row = qBtn.closest('.qty-row');
+        const valEl = row.querySelector('.qty-val');
+        valEl.textContent = Math.max(1, +valEl.textContent + +qBtn.dataset.dir);
+        return;
+      }
+
+      /* add to bag */
+      const addBtn = e.target.closest('.btn-add');
+      if (!addBtn || addBtn.disabled) return;
+      e.preventDefault();
+
+      const pid = addBtn.dataset.pid;
+      const qtyRow = addBtn.previousElementSibling;
+      const qty = qtyRow ? +qtyRow.querySelector('.qty-val').textContent : 1;
+
+      addBtn.textContent = 'Adding…';
+      addBtn.disabled = true;
+
+      try {
+        /* FIX 3: POST to the new JSON endpoint, not the old HTML form handler.
+           URL must match what you register in urls.py for add_to_cart_ajax.   */
+        const res = await fetch('/api/cart/add/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': CSRF,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({ product_id: pid, quantity: qty }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.ok) {
+          addBtn.classList.add('success');
+          addBtn.textContent = '✓ Added';
+          updateBadge(data.cart_qty);
+          /* Keep green 2.5s — makes it clear the page did NOT navigate */
+          setTimeout(() => {
+            addBtn.classList.remove('success');
+            addBtn.textContent = 'Add to bag';
+            addBtn.disabled = false;
+          }, 2500);
+        } else {
+          throw new Error(data.error || 'Failed');
+        }
+      } catch (err) {
+        addBtn.classList.add('error');
+        addBtn.textContent = 'Error — try again';
+        setTimeout(() => {
+          addBtn.classList.remove('error');
+          addBtn.textContent = 'Add to bag';
+          addBtn.disabled = false;
+        }, 2000);
+      }
+    });
+
+    /* ── Filter pills ─────────────────────── */
+    filterBar.addEventListener('click', e => {
+      const pill = e.target.closest('.filter-pill');
+      if (!pill) return;
+      filterBar.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      // FIX 2: pill.dataset.cat is already the category name string.
+      S.category = pill.dataset.cat;
+      fetchProducts(true);
+    });
+
+    /* ── Sort ─────────────────────────────── */
+    sortSel.addEventListener('change', () => {
+      S.sort = sortSel.value;
+      fetchProducts(true);
+    });
+
+    /* ── Search — 400 ms debounce ─────────── */
+    let debTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debTimer);
+      debTimer = setTimeout(() => {
+        S.query = searchInput.value.trim();
+        fetchProducts(true);
+      }, 400);
+    });
+
+    /* ── Boot ─────────────────────────────── */
+    fetchCategories();
+    fetchGrocery();
+    fetchProducts(true);
+
+  })();
+</script>
+{% endblock %}

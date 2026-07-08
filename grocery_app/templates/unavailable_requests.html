@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Item Requests{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3>📦 Customer Item Requests</h3>
+
+  <table class="table table-bordered mt-3">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Customer</th>
+        <th>Note</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td>{{ req.item_name }}</td>
+        <td>{{ req.user.username }}</td>
+        <td>{{ req.note|default:"—" }}</td>
+        <td>{{ req.created_at|date:"d M Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-muted text-center">
+          No item requests yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'shopowner_dashboard' %}" class="btn btn-outline-secondary">
+    Back to Dashboard
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --emerald-800: #065f46;
+        --mint-100: #d1fae5;
+        --bg-soft: #f8fafc;
+        --bento-radius: 24px;
+        --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    body { background-color: var(--bg-soft); font-family: 'Inter', sans-serif; color: #1e293b; }
+
+    /* ── Header Area ── */
+    .ocr-header {
+        padding: 3rem 0 2rem;
+        text-align: center;
+    }
+
+    .ocr-header h1 { font-weight: 800; letter-spacing: -1px; }
+
+    /* ── Upload Bento Box ── */
+    .upload-section {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 40px;
+        box-shadow: var(--card-shadow);
+        border: 2px dashed #e2e8f0;
+        transition: 0.3s;
+        text-align: center;
+        max-width: 600px;
+        margin: 0 auto 3rem;
+    }
+
+    .upload-section:hover { border-color: var(--emerald-800); }
+
+    .file-input-custom {
+        margin: 1.5rem 0;
+        border-radius: 12px;
+        padding: 10px;
+        background: var(--bg-soft);
+    }
+
+    .btn-scan {
+        background: var(--emerald-800);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        padding: 12px 40px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-scan:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(6, 95, 70, 0.2); }
+
+    /* ── Results Grid ── */
+    .results-label { font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .product-cell {
+        background: white;
+        border-radius: var(--bento-radius);
+        padding: 1.2rem;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0,0,0,0.03);
+        display: flex; flex-direction: column;
+        transition: 0.3s;
+    }
+
+    .thumb-box {
+        aspect-ratio: 4/3;
+        border-radius: 16px;
+        background: #f1f5f9;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+
+    .product-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
+    
+    .product-meta { font-size: 0.75rem; color: #64748b; line-height: 1.5; }
+
+    .btn-add-cart {
+        margin-top: 1rem;
+        background: var(--bg-soft);
+        border: none;
+        padding: 0.7rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--emerald-800);
+        transition: 0.2s;
+    }
+
+    .btn-add-cart:hover { background: var(--emerald-800); color: white; }
+
+    /* ── Warning Bento ── */
+    .not-found-box {
+        background: #fffbeb;
+        border-left: 5px solid #f59e0b;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        color: #92400e;
+    }
+</style>
+
+<div class="container pb-5">
+    
+    <div class="ocr-header">
+        <h1><span style="color: var(--emerald-800);">Smart OCR</span> Scanner</h1>
+        <p class="text-muted">Upload a photo of your handwritten list to instantly find items.</p>
+    </div>
+
+    <div class="upload-section">
+        <div class="fs-1 mb-2">📸</div>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="image" accept="image/*" required class="form-control file-input-custom">
+            <button type="submit" class="btn btn-scan">Start Analysis</button>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-warning mx-auto mb-4" style="max-width: 720px;">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if extracted_words %}
+        <div class="alert alert-light border mx-auto mb-4" style="max-width: 720px;">
+            <strong>Scanned items:</strong> {{ extracted_words|join:", " }}
+        </div>
+    {% endif %}
+
+    {% if matched_items %}
+        <h5 class="results-label">
+            <span style="background: var(--mint-100); padding: 5px 12px; border-radius: 10px;">🛒</span> 
+            Detected Products
+        </h5>
+        
+        <div class="product-grid">
+            {% for item in matched_items %}
+            <div class="product-cell">
+                {% if item.product.image_url %}
+                <div class="thumb-box">
+                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                </div>
+                {% endif %}
+
+                <div class="flex-grow-1">
+                    <div class="product-name">{{ item.product.name }}</div>
+                    <div class="product-meta">
+                        <span class="badge bg-light text-dark mb-1">{{ item.product.category.name }}</span><br>
+                        <strong>₹{{ item.price }}</strong> | Stock: {{ item.quantity }}
+                    </div>
+                </div>
+
+                <button class="btn btn-add-cart add-to-cart-btn"
+                        data-product="{{ item.product.id }}"
+                        data-url="{% url 'add_to_cart_ajax' %}">
+                    Add to Cart
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if not_found %}
+        <div class="not-found-box shadow-sm">
+            <div class="fw-bold mb-1">⚠️ Items not in our inventory:</div>
+            <div class="opacity-75">{{ not_found|join:", " }}</div>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.querySelectorAll(".add-to-cart-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        const productId = this.dataset.product;
+        const url = this.dataset.url;
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                this.innerHTML = "✓ Added";
+                this.style.background = "var(--emerald-800)";
+                this.style.color = "white";
+                setTimeout(() => {
+                    this.innerHTML = "Add to Cart";
+                    this.style.background = "var(--bg-soft)";
+                    this.style.color = "var(--emerald-800)";
+                }, 2000);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

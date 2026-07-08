@@ -1,0 +1,10 @@
+Django==4.2.30
+google-genai
+numpy==2.0.2
+pandas
+scikit-learn
+rapidfuzz
+reportlab
+Pillow
+pytesseract
+opencv-python
