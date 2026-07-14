@@ -25,8 +25,7 @@ Smart Grocery is a Django web application for managing a grocery shopping experi
 - Django
 - SQLite for local development
 - ReportLab for PDF invoices
-- Tesseract/Pytesseract and OpenCV for OCR
-- Google Gen AI SDK for Gemini integration
+- Google Gen AI SDK with Gemini 3.1 Flash-Lite for grocery image scanning
 - Pandas, NumPy, and scikit-learn for product recommendation logic
 
 ## Project Structure
@@ -83,7 +82,7 @@ DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 Run migrations:
@@ -122,7 +121,7 @@ Gemini is configured through environment variables, not hard-coded secrets. Add 
 
 ```env
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 The Django settings file loads `.env` and exposes:
@@ -150,4 +149,4 @@ Use `.env.example` as the safe template for local configuration.
 
 - SQLite is configured for local development.
 - Do not commit real API keys, local databases, uploaded media, or virtual environments.
-- Tesseract must be installed on the host machine for OCR features to work.
+- Grocery-list images are scanned through Gemini, so no local OCR executable is required.

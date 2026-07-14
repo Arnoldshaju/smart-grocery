@@ -8,7 +8,7 @@ Smart Grocery is a Django web app for grocery shopping and store management. It 
 
 - Customers can browse products, search/filter the catalog, add to cart, checkout, view orders, download invoices, track budgets, earn/redeem reward points, maintain grocery lists, request unavailable items, and scan grocery list images.
 - Shop owners can manage inventory, create offers, view dashboard metrics, inspect orders, handle unavailable-item requests, and review monthly reports.
-- The app also includes OCR/Gemini image parsing and a TF-IDF recommendation helper.
+- The app also includes Gemini grocery-image parsing and a TF-IDF recommendation helper.
 
 ## Main Stack
 
@@ -17,8 +17,8 @@ Smart Grocery is a Django web app for grocery shopping and store management. It 
 - SQLite for local development
 - HTML templates with app CSS
 - ReportLab for PDF invoices
-- Pytesseract/OpenCV/Pillow for OCR
-- Google Gen AI SDK for Gemini image parsing
+- Google Gen AI SDK for Gemini 3.1 Flash-Lite image parsing
+- Pillow for image handling
 - Pandas, NumPy, scikit-learn, and RapidFuzz for recommendation logic
 
 ## Important Paths
@@ -37,7 +37,7 @@ grocery_app/templates/            Django templates
 grocery_app/static/css/style.css  App styling
 grocery_app/management/commands/  Product/import inventory commands
 grocery_app/ml_models/            Recommendation code and training data
-grocery_app/ocr_utils.py          OCR preprocessing helper
+grocery_app/services/             External service integrations
 ```
 
 ## Data Model Overview
@@ -112,7 +112,7 @@ DJANGO_SECRET_KEY=your-secret-key
 DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 `smart_grocery/settings.py` loads `.env` manually and exposes `settings.GEMINI_API_KEY` and `settings.GEMINI_MODEL`.
@@ -143,7 +143,7 @@ Ask before removing or ignoring those CSVs because the app/recommender may depen
 - If adding config, put real values in `.env` and safe placeholders in `.env.example`.
 - If adding dependencies, update `requirements.txt`.
 - If touching Gemini, do not hard-code API keys. Read from `settings`.
-- If touching OCR, remember local Tesseract installation may be OS-specific.
+- If touching image scanning, keep API keys in settings and mock Gemini in tests.
 - If touching recommendation code, note that pickle files are generated and ignored; source CSV/code should remain the canonical input.
 - `CustomerOrder.items_json` stores order snapshots, so report and invoice code reads from JSON, not live cart items.
 

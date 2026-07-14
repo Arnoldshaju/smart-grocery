@@ -117,15 +117,16 @@
 <div class="container pb-5">
     
     <div class="ocr-header">
-        <h1><span style="color: var(--emerald-800);">Smart OCR</span> Scanner</h1>
-        <p class="text-muted">Upload a photo of your handwritten list to instantly find items.</p>
+        <h1><span style="color: var(--emerald-800);">Smart Grocery</span> Scanner</h1>
+        <p class="text-muted">Upload a clear photo of your handwritten or printed list to find items.</p>
     </div>
 
     <div class="upload-section">
         <div class="fs-1 mb-2">📸</div>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <input type="file" name="image" accept="image/*" required class="form-control file-input-custom">
+            <input type="file" name="image" accept="image/jpeg,image/png,image/webp" required class="form-control file-input-custom">
+            <div class="form-text mb-3">JPEG, PNG, or WebP; maximum 10 MB.</div>
             <button type="submit" class="btn btn-scan">Start Analysis</button>
         </form>
     </div>
