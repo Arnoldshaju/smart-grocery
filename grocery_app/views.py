@@ -358,57 +358,8 @@ def add_to_list(request, product_id):
     return HttpResponseRedirect(reverse('customer_dashboard'))
 
 
-import base64
-import json
-import re
-
-from django.conf import settings
 from django.db.models import Q
-
-
-def load_gemini_api_key():
-    return settings.GEMINI_API_KEY
-
-
-from .models import InventoryItem
-
-
-def scan_grocery_list_with_gemini(image_file):
-    from google import genai
-
-    api_key = load_gemini_api_key()
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set. Add it to .env or export it before starting Django.")
-
-    image_file.seek(0)
-    image_bytes = image_file.read()
-    mime_type = getattr(image_file, "content_type", None) or "image/jpeg"
-
-    client = genai.Client(api_key=api_key)
-    response = client.interactions.create(
-        model=settings.GEMINI_MODEL,
-        input=[
-            {
-                "type": "text",
-                "text": (
-                    "Read this grocery list image. Return only JSON in this "
-                    'format: {"items": ["milk", "bread", "rice"]}.'
-                ),
-            },
-            {
-                "type": "image",
-                "data": base64.b64encode(image_bytes).decode("utf-8"),
-                "mime_type": mime_type,
-            },
-        ],
-    )
-
-    output = response.output_text.strip()
-    if output.startswith("```"):
-        output = re.sub(r"^```(?:json)?\s*|\s*```$", "", output, flags=re.I)
-
-    data = json.loads(output)
-    return data.get("items", [])
+from .services.gemini_scanner import GeminiScannerError, scan_grocery_items
 
 
 @login_required
@@ -421,25 +372,18 @@ def ocr_scanner(request):
     if request.method == "POST" and request.FILES.get("image"):
         image_file = request.FILES["image"]
 
-        try:
-            extracted_words = scan_grocery_list_with_gemini(image_file)
-        except Exception as exc:
-            error = f"Could not scan image with Gemini: {exc}"
-            extracted_words = []
-
-        extracted_words = [
-            item.lower().strip()
-            for item in extracted_words
-            if isinstance(item, str) and item.strip()
-        ]
-        extracted_words = list(dict.fromkeys(extracted_words))
-
         cart, _ = Cart.objects.get_or_create(user=request.user)
         store = cart.store
 
         if store is None:
-            error = "Please select a store before using OCR scanner."
-        elif extracted_words:
+            error = "Please select a store before using the grocery scanner."
+        else:
+            try:
+                extracted_words = scan_grocery_items(image_file)
+            except GeminiScannerError as exc:
+                error = str(exc)
+
+        if store is not None and extracted_words:
             query = Q()
             for word in extracted_words:
                 query |= Q(product__name__icontains=word)
@@ -464,26 +408,9 @@ def ocr_scanner(request):
         "error": error,
     })
 
-from django.shortcuts import render
-from .ocr_utils import extract_text
-from django.core.files.storage import FileSystemStorage
-
-
 def ocr_upload(request):
-    extracted_text = ""
-
-    if request.method == "POST" and request.FILES.get("image"):
-        image = request.FILES["image"]
-
-        fs = FileSystemStorage()
-        filename = fs.save(image.name, image)
-        image_path = fs.path(filename)
-
-        extracted_text = extract_text(image_path)
-
-    return render(request, "ocr_upload.html", {
-        "extracted_text": extracted_text
-    })
+    """Compatibility redirect for the retired scanner route."""
+    return redirect("ocr_scanner")
 
 
 
