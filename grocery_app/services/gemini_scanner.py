@@ -17,9 +17,11 @@ def scan_grocery_items(image_file):
     from google import genai
     from google.genai import types
 
-    api_key = settings.GEMINI_API_KEY
-    if not api_key:
-        raise GeminiScannerError("The grocery scanner is not configured.")
+    api_key = getattr(settings, "GEMINI_API_KEY", "")
+    if not api_key or api_key in {"your-gemini-api-key", "your-api-key", "change-me"}:
+        raise GeminiScannerError(
+            "Gemini API key is not configured. Please set a valid GEMINI_API_KEY in your .env file."
+        )
 
     mime_type = getattr(image_file, "content_type", "")
     if mime_type not in ALLOWED_IMAGE_TYPES:
@@ -36,7 +38,7 @@ def scan_grocery_items(image_file):
     try:
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
+            model=getattr(settings, "GEMINI_MODEL", "gemini-3.1-flash-lite"),
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 (
@@ -68,17 +70,23 @@ def scan_grocery_items(image_file):
         items = data.get("items", []) if isinstance(data, dict) else data.items
     except Exception as exc:
         logger.exception("Gemini grocery scanning failed")
+        exc_str = str(exc).lower()
         status_code = getattr(exc, "status_code", None)
+        if "api_key_invalid" in exc_str or "api key not valid" in exc_str or status_code in (400, 401, 403):
+            if "api key" in exc_str or "api_key" in exc_str:
+                raise GeminiScannerError(
+                    "Invalid Gemini API key. Please check GEMINI_API_KEY in your .env file."
+                ) from exc
         if status_code == 429:
             raise GeminiScannerError(
                 "The scanner has reached its request limit. Please wait a minute and try again."
             ) from exc
         if status_code == 404:
             raise GeminiScannerError(
-                "The configured Gemini model is unavailable. Please contact the administrator."
+                "The configured Gemini model is unavailable. Please check GEMINI_MODEL in your .env file."
             ) from exc
         raise GeminiScannerError(
-            "The grocery scanner is temporarily unavailable. Please try again."
+            f"Gemini grocery scanner error: {exc}"
         ) from exc
 
     normalized = []

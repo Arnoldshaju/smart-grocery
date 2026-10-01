@@ -33,6 +33,25 @@ from io import BytesIO
 LOW_STOCK_THRESHOLD = 5
 PAGE_SIZE = 36  # 36 products per page (3-col × 12 rows)
 
+def get_or_create_default_store():
+    store = Store.objects.first()
+    if not store:
+        owner = User.objects.filter(is_superuser=True).first() or User.objects.first()
+        if not owner:
+            owner = User.objects.create_user(username="admin", email="admin@example.com")
+        store = Store.objects.create(name="Smart Grocery Main Store", owner=owner)
+
+    if InventoryItem.objects.filter(store=store).count() < Product.objects.count():
+        existing_pids = set(InventoryItem.objects.filter(store=store).values_list('product_id', flat=True))
+        items_to_create = [
+            InventoryItem(store=store, product=p, quantity=100, price=p.mrp)
+            for p in Product.objects.all() if p.id not in existing_pids
+        ]
+        if items_to_create:
+            InventoryItem.objects.bulk_create(items_to_create, batch_size=1000)
+
+    return store
+
 def landing(request):
     return render(request, 'landing.html')
 
@@ -87,7 +106,7 @@ from django.db.models import F, Case, When, Value, BooleanField
 @login_required
 def customer_dashboard(request):
 
-    store = Store.objects.first()
+    store = get_or_create_default_store()
 
     qs = (
         InventoryItem.objects
@@ -133,7 +152,7 @@ def customer_dashboard(request):
 @login_required
 @require_GET
 def product_api(request):
-    store = Store.objects.first()
+    store = get_or_create_default_store()
 
     # Single JOIN from InventoryItem → Product → Category
     # All heavy lifting stays in SQL — no Python-level loops over 7 k rows.
@@ -373,15 +392,15 @@ def ocr_scanner(request):
         image_file = request.FILES["image"]
 
         cart, _ = Cart.objects.get_or_create(user=request.user)
+        if not cart.store:
+            cart.store = get_or_create_default_store()
+            cart.save(update_fields=["store"])
         store = cart.store
 
-        if store is None:
-            error = "Please select a store before using the grocery scanner."
-        else:
-            try:
-                extracted_words = scan_grocery_items(image_file)
-            except GeminiScannerError as exc:
-                error = str(exc)
+        try:
+            extracted_words = scan_grocery_items(image_file)
+        except GeminiScannerError as exc:
+            error = str(exc)
 
         if store is not None and extracted_words:
             query = Q()
@@ -912,7 +931,7 @@ def add_to_cart_ajax(request):
     product_id = int(request.POST.get("product_id"))
     quantity = max(1, int(request.POST.get("quantity", 1)))
 
-    store = Store.objects.first()
+    store = get_or_create_default_store()
 
     inventory_item = get_object_or_404(
         InventoryItem,

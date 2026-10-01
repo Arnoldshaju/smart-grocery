@@ -61,15 +61,15 @@ class GroceryScannerViewTests(TestCase):
         self.assertContains(response, "bread")
         scan.assert_called_once()
 
-    @patch("grocery_app.views.scan_grocery_items")
-    def test_does_not_scan_until_store_is_selected(self, scan):
+    @patch("grocery_app.views.scan_grocery_items", return_value=["milk"])
+    def test_defaults_to_main_store_if_none_selected(self, scan):
         self.cart.store = None
         self.cart.save(update_fields=["store"])
 
         response = self.client.post(reverse("ocr_scanner"), {"image": image_upload()})
 
-        self.assertContains(response, "Please select a store")
-        scan.assert_not_called()
+        self.assertEqual(response.status_code, 200)
+        scan.assert_called_once()
 
     def test_legacy_ocr_route_redirects_to_gemini_scanner(self):
         response = self.client.get(reverse("ocr_upload"))
